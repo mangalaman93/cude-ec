@@ -1,26 +1,26 @@
 CUDA-EC: A Parallel Fast error correction tool for high-throughput short-reads DNA Sequence.
 
+-------------
 CUDA-EC v.1.0
-----------
+-------------
 Code base downlaoded from this paper
 Haixiang Shi, Bertil Schmidt, Weiguo Liu, and Wolfgang M¨¹ller-Wittig: "A Parallel Algorithm for Error Correction in High-Throughput Short-Read Data on CUDA-enabled Graphics Hardware", Manuscript submitted 
 
 -------------
 Installation: 
 -------------
-There is a Makefile which should compile the code.
-This code was designed with CUDA 1.1, which is very old and depended on cutil.h (deprecated now). This library has been manually placed in the "common" directory.
+There is a Makefile in this folder which should compile the code.
+This code was initially written with CUDA 1.1, which is very old and depended on cutil.h (deprecated now). This library has been manually placed in the "common" directory now and linked with the code.
 
 ------
 Usage: 
 ------
 ./CUDA-EC -f {inputfilename} -t {kmer size} -o {fixed-filename} -d {discarded-filename} -r {read_length}[-maxTrim {maximum_trim}] [-minVotes {minimum votes}] [-minMult {multiplicity}] [-search {num_error_to_fix]]
 
-
 --------
 Example:
 --------
-A sample fasta file is downloaded from NCBI in the input folder. In this sample, each read is of length 36. Assuming an error rate of 1% and our kmer size preference to be 20, run it using the following command:
+A sample fasta file SRR1552370.fasta is downloaded from NCBI in the input folder. In this sample, each read is of length 36. Assuming an error rate of 1% and our kmer size preference to be 20, run it using the following command:
 
 ./CUDA-EC  -f input/SRR1552370.fasta -t 20 -o output/SRR1552370.fasta.fixed -d output/SRR1552370.fasta.discards -r 36 -search 1
 
