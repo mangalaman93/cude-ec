@@ -1,36 +1,30 @@
 CUDA-EC: A Parallel Fast error correction tool for high-throughput short-reads DNA Sequence.
 
 CUDA-EC v.1.0
-Contact: hxshi@ntu.edu.sg
-
----------
-Overview:
----------
-CUDA-EC is a C program for fixing errors for short-read hight-throughput data,
-such as those genrated by the Illumina Genome Analyzer. 
-
 ----------
-Reference:
-----------
+Code base downlaoded from this paper
 Haixiang Shi, Bertil Schmidt, Weiguo Liu, and Wolfgang M¨¹ller-Wittig: "A Parallel Algorithm for Error Correction in High-Throughput Short-Read Data on CUDA-enabled Graphics Hardware", Manuscript submitted 
-
--------------------
-System Requirments: 
--------------------
-CUDA-EC has been tested on systems running Linux and CUDA version 1.1 with Nvidia GeForce GTX 280. 
 
 -------------
 Installation: 
 -------------
-Install CUDA toolkit v1.1 and CUDA SDK v1.1
-Unpack CUDA-EC.tar into CUDA SDK directory $CUDA_SDK_DIR/NVIDIA_CUDA_SDK/projects
-Compile CUDA-EC using make, generate executable file in $CUDA_SDK_DIR/bin/linux/release
+There is a Makefile which should compile the code.
+This code was designed with CUDA 1.1, which is very old and depended on cutil.h (deprecated now). This library has been manually placed in the "common" directory.
 
 ------
 Usage: 
 ------
-./CUDA-EC -f {inputfilename} -t {tuplesize} -o {fixed-filename} -d {discarded-filename} -r {read_length}[-maxTrim {maximum_trim}] [-minVotes {minimum votes}] [-minMult {multiplicity}] [-search {num_error_to_fix]]
+./CUDA-EC -f {inputfilename} -t {kmer size} -o {fixed-filename} -d {discarded-filename} -r {read_length}[-maxTrim {maximum_trim}] [-minVotes {minimum votes}] [-minMult {multiplicity}] [-search {num_error_to_fix]]
 
+
+--------
+Example:
+--------
+A sample fasta file is downloaded from NCBI in the input folder. In this sample, each read is of length 36. Assuming an error rate of 1% and our kmer size preference to be 20, run it using the following command:
+
+./CUDA-EC  -f input/SRR1552370.fasta -t 20 -o output/SRR1552370.fasta.fixed -d output/SRR1552370.fasta.discards -r 36 -search 1
+
+Run it using the "qsub ecJob.pbs" to avoid using the head node.
 
 --------------------
 REQUIRED PARAMETERS:   
@@ -47,7 +41,7 @@ GAAATTGAGACGAGACGCCAAAATAAAAAGAAAAA
 
      .....
 
--t {tuplesize}							--	length of tuple
+-t {kmer size}							--	length of kmer
 -o {fixed-filename}	  			-- 	name of output fixed file
 -d {discarded-filename}			--	name of output discarded file
 -r {read_length}						--	length of the input reads
@@ -66,16 +60,5 @@ OUTPUT:
 --------
 
 CUDA-EC outputs two files in the same directiroy as the input file, one is the fixed file contains the fixed and trimmed reads, the another is the file contains the discarded reads. 
-
---------
-Example:
---------
-On the CUDA-EC homepage you will find a dataset with simulated read that was obtained by randomly sampling 1.1M reads of 35 bases from the 576,869bp S.cer5 (NC_00137) genome. A base error rate of 1% has been uniformly introduced in the read sequences.
-Dowonlad the file and unpack it to the same directoy as CUDA-EC. CUDA-EC can now be called as follows:
-
-./CUDA-EC  -f NC001137_e001.fasta -t 20 -o NC001137_e001.fasta.fixed -d NC001137_e001.fasta.discards -r 35 -search 1
- 
-
-
 
 
