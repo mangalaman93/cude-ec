@@ -1,7 +1,7 @@
 #PBS -q class
 #PBS -l nodes=1:m2090
 #PBS -l walltime=00:50:00
-#PBS -N EC-CUDA
+#PBS -N CUDA-EC
 
 # Changes to the directory we were in when we
 # submit the job:
@@ -16,17 +16,17 @@ echo "Node:" `hostname`
 echo "Current directory: ${PWD}"
 
 #Set these variables before run 
-FILENAME=SRR006331.fasta
+FILENAME=SRR006331.fasta 
 READLENGTH=36
+
 KMERSIZE=21
 ERRORPERREAD=1
 MINMULT=5
 
 echo "=== Running CUDA-EC for ${FILENAME}"
-echo "PARAMETERS Coverage:${COVERAGE}  ,KmerSize:${KMERSIZE},  read size:-r ${READLENGTH},  Errorread: ${ERRORPERREAD}"
+echo "=== PARAMETERS Minmult:${MINMULT}  ,KmerSize:${KMERSIZE},  read size:-r ${READLENGTH},  Errorread: ${ERRORPERREAD}"
 
-./CUDA-EC  -f input/${FILENAME} -t ${KMERSIZE} -o output/${FILENAME}.fixed -d output/${FILENAME}.discards -r ${READLENGTH} -search ${ERRORPERREAD} -minMult ${MINMULT}
-#./CUDA-EC  -f input/${FILENAME}
+./CUDA-EC -f input/${FILENAME} -t ${KMERSIZE} -o output/${FILENAME}.fixed -d output/${FILENAME}.discards -r ${READLENGTH} -search ${ERRORPERREAD} -minMult ${MINMULT}
 
 echo "=== Done! ==="
 

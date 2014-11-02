@@ -1,0 +1,15 @@
+1) SRR006331.fasta (NUM_READS: 1.7 million) 
+1.1) Minmult:5  ,KmerSize:21,  read size:-r 36,  Errorread: 2
+Building bloom filter : 83.18 sec
+The run time for fixing error in GPU is: 12.56 sec
+
+
+1.2) Minmult:5  ,KmerSize:21,  read size:-r 36,  Errorread: 1
+Buliding bloom filter : 75.38 sec.
+The run time for fixing error in GPU is: 4.88 sec
+
+2) SRR016146.fasta (NUM_READS : 4.4 million)
+Code throwing errors for this dataset , this is the second set decgpu used 
+Using minmult 5 -> seg fault
+Using minnult 3 -> gpuassert invalid argument
+
