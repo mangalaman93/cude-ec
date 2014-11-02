@@ -46,6 +46,17 @@
 // includes, kernels
 #include "FixErrorsVoting_kernel.cu"
 
+//Error checking 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+  if (code != cudaSuccess) 
+  {
+    fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+    if (abort) exit(code);
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Run test
@@ -101,10 +112,11 @@ extern "C" void runTest(unsigned char *hash_table,
 		
 	//call kernel
 	printf( "Running Kernel with %d Block, %d Thread...\n",BLOCK,THREAD);
-		
+
 	fix_errors1<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param);
 		
-	CUT_CHECK_ERROR("Kernel execution failed");
+  gpuErrchk( cudaPeekAtLastError() );
+  gpuErrchk( cudaDeviceSynchronize() );
 		
 	CUT_SAFE_CALL(cutStopTimer(timer));
 	totaltime = cutGetTimerValue(timer);

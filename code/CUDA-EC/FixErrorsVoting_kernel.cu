@@ -53,187 +53,187 @@ texture<unsigned char,1, cudaReadModeElementType> tex;
 __constant__ unsigned int _char_size_ = 0x08;    // 8 bits in 1 char(unsigned)
 
 __constant__ unsigned char _bit_mask_[8] = {
-                                   0x01, //00000001
-                                   0x02, //00000010
-                                   0x04, //00000100
-                                   0x08, //00001000
-                                   0x10, //00010000
-                                   0x20, //00100000
-                                   0x40, //01000000
-                                   0x80  //10000000
-                                 };
-                                 
+  0x01, //00000001
+  0x02, //00000010
+  0x04, //00000100
+  0x08, //00001000
+  0x10, //00010000
+  0x20, //00100000
+  0x40, //01000000
+  0x80  //10000000
+};
+
 __device__ char nextNuc[256];
 
 
 __constant__ char unmasked_nuc[256] = {0, 1, 2, 3, 'N', 'R', 'Y', 'W', 'S', 'M',     // 9	
-			     'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',    // 19	
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 29 
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 39 
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 49 
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 59 
-			     '\0','\0','\0','\0','\0', 'A','\0', 'C','\0','\0',    // 69 
-			     '\0', 'G', 'H','\0','\0', 'K','\0', 'M', 'N','\0',    // 79 
-			     '\0','\0', 'R', 'S', 'T','\0','\0', 'W', 'X', 'Y',    // 89 
-			     '\0','\0','\0','\0','\0','\0','\0', 'A','\0', 'C',    // 99 
-			     '\0','\0','\0', 'G', 'H','\0','\0', 'K','\0', 'M',    // 109
-			     'N', '\0','\0','\0', 'R', 'S', 'T','\0','\0','\0',    // 119
-			     'X', '\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 129
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 139
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 149
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 159
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 169
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 179
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 189
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 199
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 209
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 219
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 229
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 239
-			     '\0','\0','\0','\0',   0,   1,   2,   3,   0,   1,    // 249
-			        2,   3,   0,   1,   2,   3};                       // 255
+  'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',    // 19	
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 29 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 39 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 49 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 59 
+  '\0','\0','\0','\0','\0', 'A','\0', 'C','\0','\0',    // 69 
+  '\0', 'G', 'H','\0','\0', 'K','\0', 'M', 'N','\0',    // 79 
+  '\0','\0', 'R', 'S', 'T','\0','\0', 'W', 'X', 'Y',    // 89 
+  '\0','\0','\0','\0','\0','\0','\0', 'A','\0', 'C',    // 99 
+  '\0','\0','\0', 'G', 'H','\0','\0', 'K','\0', 'M',    // 109
+  'N', '\0','\0','\0', 'R', 'S', 'T','\0','\0','\0',    // 119
+  'X', '\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 129
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 139
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 149
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 159
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 169
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 179
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 189
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 199
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 209
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 219
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 229
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 239
+  '\0','\0','\0','\0',   0,   1,   2,   3,   0,   1,    // 249
+  2,   3,   0,   1,   2,   3};                       // 255
 
 
 __constant__ char nuc_char[256] = {'G', 'A', 'C', 'T', 'N', 'R', 'Y', 'W', 'S', 'M',     // 9	
-			     'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',    // 19	
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 29 
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 39 
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 49 
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 59 
-			     '\0','\0','\0','\0','\0', 'A','\0', 'C','\0','\0',    // 69 
-			     '\0', 'G', 'H','\0','\0', 'K','\0', 'M', 'N','\0',    // 79 
-			     '\0','\0', 'R', 'S', 'T','\0','\0', 'W','\0', 'Y',    // 89 
-			     '\0','\0','\0','\0','\0','\0','\0', 'a','\0', 'c',    // 99 
-			     '\0','\0','\0', 'g', 'h','\0','\0', 'k','\0', 'm',    // 109
-			     'n', '\0','\0','\0', 'r', 's', 't','\0','\0','\0',    // 119
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 129
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 139
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 149
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 159
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 169
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 179
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 189
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 199
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 209
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 219
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 229
-			     '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 239
-			     '\0','\0','\0','\0', 'g', 'a', 'c', 't', 'g', 'a',    // 249
-			     'c', 't','g','a','c','t'};                            // 255
+  'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',    // 19	
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 29 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 39 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 49 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 59 
+  '\0','\0','\0','\0','\0', 'A','\0', 'C','\0','\0',    // 69 
+  '\0', 'G', 'H','\0','\0', 'K','\0', 'M', 'N','\0',    // 79 
+  '\0','\0', 'R', 'S', 'T','\0','\0', 'W','\0', 'Y',    // 89 
+  '\0','\0','\0','\0','\0','\0','\0', 'a','\0', 'c',    // 99 
+  '\0','\0','\0', 'g', 'h','\0','\0', 'k','\0', 'm',    // 109
+  'n', '\0','\0','\0', 'r', 's', 't','\0','\0','\0',    // 119
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 129
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 139
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 149
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 159
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 169
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 179
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 189
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 199
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 209
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 219
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 229
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',    // 239
+  '\0','\0','\0','\0', 'g', 'a', 'c', 't', 'g', 'a',    // 249
+  'c', 't','g','a','c','t'};                            // 255
 
 __constant__ char unmasked_nuc_index[256] = {
-		  0,1,2,3,4,4,4,4,4,4,   // 0 9
-		  4,4,4,4,4,4,4,4,4,4,   // 10 19
-		  4,4,4,4,4,4,4,4,4,4,   // 20 29
-		  4,4,4,4,4,4,4,4,4,4,   // 30 39
-		  4,4,4,4,4,4,4,4,4,4,   // 40 49
-		  4,4,4,4,4,4,4,4,4,4,   // 50 59
-		  4,4,4,4,4,1,4,2,4,4,   // 60 69
-		  4,0,4,4,4,4,4,4,4,4,   // 70 79
-		  4,4,4,4,3,4,4,4,4,4,   // 80 89
-		  4,4,4,4,4,4,4,1,4,2, // 90 99
-		  4,4,4,0,4,4,4,4,4,4,  // 100 109
-		  4,4,4,4,4,4,3,4,4,4,  // 110 119
-		  4,4,4,4,4,4,4,4,4,4,   // 120 129
-		  4,4,4,4,4,4,4,4,4,4,   // 130 139
-		  4,4,4,4,4,4,4,4,4,4,   // 140 149
-		  4,4,4,4,4,4,4,4,4,4,   // 150 159
-		  4,4,4,4,4,4,4,4,4,4,   // 160 169
-		  4,4,4,4,4,4,4,4,4,4,   // 170 179
-		  4,4,4,4,4,4,4,4,4,4,   // 180 189
-		  4,4,4,4,4,4,4,4,4,4,   // 190 199
-		  4,4,4,4,4,4,4,4,4,4,   // 200 209
-		  4,4,4,4,4,4,4,4,4,4,   // 210 219
-		  4,4,4,4,4,4,4,4,4,4,   // 220 229
-		  4,4,4,4,4,4,4,4,4,4,   // 230 239
-		  4,4,4,4,0,1,2,3,0,1,   // 240 249
-		  2,3,0,1,2,3 };   // 250 255
+  0,1,2,3,4,4,4,4,4,4,   // 0 9
+  4,4,4,4,4,4,4,4,4,4,   // 10 19
+  4,4,4,4,4,4,4,4,4,4,   // 20 29
+  4,4,4,4,4,4,4,4,4,4,   // 30 39
+  4,4,4,4,4,4,4,4,4,4,   // 40 49
+  4,4,4,4,4,4,4,4,4,4,   // 50 59
+  4,4,4,4,4,1,4,2,4,4,   // 60 69
+  4,0,4,4,4,4,4,4,4,4,   // 70 79
+  4,4,4,4,3,4,4,4,4,4,   // 80 89
+  4,4,4,4,4,4,4,1,4,2, // 90 99
+  4,4,4,0,4,4,4,4,4,4,  // 100 109
+  4,4,4,4,4,4,3,4,4,4,  // 110 119
+  4,4,4,4,4,4,4,4,4,4,   // 120 129
+  4,4,4,4,4,4,4,4,4,4,   // 130 139
+  4,4,4,4,4,4,4,4,4,4,   // 140 149
+  4,4,4,4,4,4,4,4,4,4,   // 150 159
+  4,4,4,4,4,4,4,4,4,4,   // 160 169
+  4,4,4,4,4,4,4,4,4,4,   // 170 179
+  4,4,4,4,4,4,4,4,4,4,   // 180 189
+  4,4,4,4,4,4,4,4,4,4,   // 190 199
+  4,4,4,4,4,4,4,4,4,4,   // 200 209
+  4,4,4,4,4,4,4,4,4,4,   // 210 219
+  4,4,4,4,4,4,4,4,4,4,   // 220 229
+  4,4,4,4,4,4,4,4,4,4,   // 230 239
+  4,4,4,4,0,1,2,3,0,1,   // 240 249
+  2,3,0,1,2,3 };   // 250 255
 
 __constant__ char numeric_nuc_index[256] = {
-		  0,1,2,3,4,4,4,4,4,4,   // 0 9
-		  4,4,4,4,4,4,4,4,4,4,   // 10 19
-		  4,4,4,4,4,4,4,4,4,4,   // 20 29
-		  4,4,4,4,4,4,4,4,4,4,   // 30 39
-		  4,4,4,4,4,4,4,4,4,4,   // 40 49
-		  4,4,4,4,4,4,4,4,4,4,   // 50 59
-		  4,4,4,4,4,1,4,2,4,4,   // 60 69
-		  4,0,4,4,4,4,4,4,4,4,   // 70 79
-		  4,4,4,4,3,4,4,4,4,4,   // 80 89
-		  4,4,4,4,4,4,4,-3,4,-2, // 90 99
-		  4,4,4,-4,4,4,4,4,4,4,  // 100 109
-		  4,4,4,4,4,4,-1,4,4,4,  // 110 119
-		  4,4,4,4,4,4,4,4,4,4,   // 120 129
-		  4,4,4,4,4,4,4,4,4,4,   // 130 139
-		  4,4,4,4,4,4,4,4,4,4,   // 140 149
-		  4,4,4,4,4,4,4,4,4,4,   // 150 159
-		  4,4,4,4,4,4,4,4,4,4,   // 160 169
-		  4,4,4,4,4,4,4,4,4,4,   // 170 179
-		  4,4,4,4,4,4,4,4,4,4,   // 180 189
-		  4,4,4,4,4,4,4,4,4,4,   // 190 199
-		  4,4,4,4,4,4,4,4,4,4,   // 200 209
-		  4,4,4,4,4,4,4,4,4,4,   // 210 219
-		  4,4,4,4,4,4,4,4,4,4,   // 220 229
-		  4,4,4,4,4,4,4,4,4,4,   // 230 239
-		  4,4,4,4,-12,-11,-10,-9,-8,-7,   // 240 249
-		  -6,-5,-4,-3,-2,-1 };   // 250 255
+  0,1,2,3,4,4,4,4,4,4,   // 0 9
+  4,4,4,4,4,4,4,4,4,4,   // 10 19
+  4,4,4,4,4,4,4,4,4,4,   // 20 29
+  4,4,4,4,4,4,4,4,4,4,   // 30 39
+  4,4,4,4,4,4,4,4,4,4,   // 40 49
+  4,4,4,4,4,4,4,4,4,4,   // 50 59
+  4,4,4,4,4,1,4,2,4,4,   // 60 69
+  4,0,4,4,4,4,4,4,4,4,   // 70 79
+  4,4,4,4,3,4,4,4,4,4,   // 80 89
+  4,4,4,4,4,4,4,-3,4,-2, // 90 99
+  4,4,4,-4,4,4,4,4,4,4,  // 100 109
+  4,4,4,4,4,4,-1,4,4,4,  // 110 119
+  4,4,4,4,4,4,4,4,4,4,   // 120 129
+  4,4,4,4,4,4,4,4,4,4,   // 130 139
+  4,4,4,4,4,4,4,4,4,4,   // 140 149
+  4,4,4,4,4,4,4,4,4,4,   // 150 159
+  4,4,4,4,4,4,4,4,4,4,   // 160 169
+  4,4,4,4,4,4,4,4,4,4,   // 170 179
+  4,4,4,4,4,4,4,4,4,4,   // 180 189
+  4,4,4,4,4,4,4,4,4,4,   // 190 199
+  4,4,4,4,4,4,4,4,4,4,   // 200 209
+  4,4,4,4,4,4,4,4,4,4,   // 210 219
+  4,4,4,4,4,4,4,4,4,4,   // 220 229
+  4,4,4,4,4,4,4,4,4,4,   // 230 239
+  4,4,4,4,-12,-11,-10,-9,-8,-7,   // 240 249
+  -6,-5,-4,-3,-2,-1 };   // 250 255
 
- __constant__ unsigned char nucToIndex[256] = {16,16,16,16,16,16,16,16,16,16,  // 0
-				      16,16,16,16,16,16,16,16,16,16,  // 10
-				      16,16,16,16,16,16,16,16,16,16,  // 20
-				      16,16,16,16,16,16,16,16,16,16,  // 30
-				      16,16,16,16,16,16,16,16,16,16,  // 40
-				      16,16,16,16,16,16,16,16,16,16,  // 50
-				      16,16,16,16,16,1,12,2,14,16,  // 60
-				      16,0,11,16,16,116,16,9,4,16,  // 70
-				      16,16,5,8,3,16,13,7,15,6,  // 80
-				      16,16,16,16,16,16,16,253,12,254,  // 90
-				      14,16,16,252,11,8,16,116,16,9,  // 100
-				      4,16,16,16,5,16,255,16,13,7,  // 110
-				      15,6,16,16,16,16,16,16,16,16,  // 120
-				      16,16,16,16,16,16,16,16,16,16,  // 130
-				      16,16,16,16,16,16,16,16,16,16,  // 140
-				      16,16,16,16,16,16,16,16,16,16,  // 150
-				      16,16,16,16,16,16,16,16,16,16,  // 160
-				      16,16,16,16,16,16,16,16,16,16,  // 170
-				      16,16,16,16,16,16,16,16,16,16,  // 180
-				      16,16,16,16,16,16,16,16,16,16,  // 190
-				      16,16,16,16,16,16,16,16,16,16,  // 200
-				      16,16,16,16,16,16,16,16,16,16,  // 210
-				      16,16,16,16,16,16,16,16,16,16,  // 220
-				      16,16,16,16,16,16,16,16,16,16,  // 230
-				      16,16,16,16,16,16,16,16,16,16,  // 240
-				      16,16,16,16,16,16};         // 250
-
-  
-  __constant__ char indexToNuc[256] = {'G', 'A', 'C', 'T', 'N', 'R', 'Y', 'W', 'S', 'M',   // 9
-				      'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',  // 19
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 29 
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 39 
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 49 
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 59 
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 69 
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 79 
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 89 
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 99
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 109
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 119
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 129
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 139
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 149
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 159
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 169
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 179
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 189
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 199
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 209
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 219
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 229
-				      '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 239
-				      '\0','\0','\0','\0', 'g', 'a', 'c', 't', 'g', 'a',  // 249
-				      'c', 't','g','a','c','t'};                          // 255
+__constant__ unsigned char nucToIndex[256] = {16,16,16,16,16,16,16,16,16,16,  // 0
+  16,16,16,16,16,16,16,16,16,16,  // 10
+  16,16,16,16,16,16,16,16,16,16,  // 20
+  16,16,16,16,16,16,16,16,16,16,  // 30
+  16,16,16,16,16,16,16,16,16,16,  // 40
+  16,16,16,16,16,16,16,16,16,16,  // 50
+  16,16,16,16,16,1,12,2,14,16,  // 60
+  16,0,11,16,16,116,16,9,4,16,  // 70
+  16,16,5,8,3,16,13,7,15,6,  // 80
+  16,16,16,16,16,16,16,253,12,254,  // 90
+  14,16,16,252,11,8,16,116,16,9,  // 100
+  4,16,16,16,5,16,255,16,13,7,  // 110
+  15,6,16,16,16,16,16,16,16,16,  // 120
+  16,16,16,16,16,16,16,16,16,16,  // 130
+  16,16,16,16,16,16,16,16,16,16,  // 140
+  16,16,16,16,16,16,16,16,16,16,  // 150
+  16,16,16,16,16,16,16,16,16,16,  // 160
+  16,16,16,16,16,16,16,16,16,16,  // 170
+  16,16,16,16,16,16,16,16,16,16,  // 180
+  16,16,16,16,16,16,16,16,16,16,  // 190
+  16,16,16,16,16,16,16,16,16,16,  // 200
+  16,16,16,16,16,16,16,16,16,16,  // 210
+  16,16,16,16,16,16,16,16,16,16,  // 220
+  16,16,16,16,16,16,16,16,16,16,  // 230
+  16,16,16,16,16,16,16,16,16,16,  // 240
+  16,16,16,16,16,16};         // 250
 
 
-	
+__constant__ char indexToNuc[256] = {'G', 'A', 'C', 'T', 'N', 'R', 'Y', 'W', 'S', 'M',   // 9
+  'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',  // 19
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 29 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 39 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 49 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 59 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 69 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 79 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 89 
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 99
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 109
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 119
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 129
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 139
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 149
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 159
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 169
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 179
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 189
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 199
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 209
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 219
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 229
+  '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',  // 239
+  '\0','\0','\0','\0', 'g', 'a', 'c', 't', 'g', 'a',  // 249
+  'c', 't','g','a','c','t'};                          // 255
+
+
+
 __device__ int _toupper_(int ch) 
 {
   if ((unsigned int)(ch - 'a') < 26u )
@@ -243,31 +243,31 @@ __device__ int _toupper_(int ch)
 
 __device__ char * _strcpy_(char *s1, char *s2)
 {
-	char *os1;
+  char *os1;
 
-	os1 = s1;
-	while (*s1++ = *s2++)
-		;
-	return(os1);
+  os1 = s1;
+  while (*s1++ = *s2++)
+    ;
+  return(os1);
 }
 
 
 __device__ char * _strncpy_(char *dst, const char *src,register size_t n)
 {
-	if (n != 0) {
-		register char *d = dst;
-		register const char *s = src;
+  if (n != 0) {
+    register char *d = dst;
+    register const char *s = src;
 
-		do {
-			if ((*d++ = *s++) == 0) {
-				/* NUL pad the remaining n-1 bytes */
-				while (--n != 0)
-					*d++ = 0;
-				break;
-			}
-		} while (--n != 0);
-	}
-	return (dst);
+    do {
+      if ((*d++ = *s++) == 0) {
+        /* NUL pad the remaining n-1 bytes */
+        while (--n != 0)
+          *d++ = 0;
+        break;
+      }
+    } while (--n != 0);
+  }
+  return (dst);
 }
 
 
@@ -275,513 +275,513 @@ __device__ char * _strncpy_(char *dst, const char *src,register size_t n)
 //Check each char inside this read, only "A/C/T/G" allowed in the fasta file
 __device__ int PrepareSequence(char *read) 
 {
-	int p;
-	
-	int return_value = 1;
-	
-	for (p = 0; p < READ_LENGTH; p++ )
-	{ 
-		read[p] = _toupper_(read[p]);
-		if (!(read[p] == 'A' ||
-					read[p] == 'C' ||
-					read[p] == 'T' || 
-					read[p] == 'G'))
-		{
-			return_value = 0;
-			break;
-		}
-	}
-	return return_value;
+  int p;
+
+  int return_value = 1;
+
+  for (p = 0; p < READ_LENGTH; p++ )
+  { 
+    read[p] = _toupper_(read[p]);
+    if (!(read[p] == 'A' ||
+          read[p] == 'C' ||
+          read[p] == 'T' || 
+          read[p] == 'G'))
+    {
+      return_value = 0;
+      break;
+    }
+  }
+  return return_value;
 }
 
 
 //Check whether bloom filter contains "string key"
 __device__ bool contains(char *key, unsigned int table_size)
 {	
-	
-	unsigned int hash, bit, index,len;
-	unsigned char bloom;
-	
-	unsigned int i;	
-	unsigned int b    = 378551;
-	unsigned int a    = 63689;
-	
-	len = TUPLE_SIZE;
-	char str[TUPLE_SIZE+1];
-	
-	_strncpy_(str, key,TUPLE_SIZE);
-	str[TUPLE_SIZE]=0;
-	
-	
-    //_RSHash_	
-	hash=0;i=0;
-    for(i = 0; i < len; i++)
-    {
-      hash = hash * a + (str[i]);
-      a    = a * b;
-	}
-	
-	hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;    
-    bloom = tex1Dfetch( tex, index);    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    
-    //_JSHash_
-     hash = 1315423911;
-    i=0;
-    for(i = 0; i < len; i++)
-    {
-      hash ^= ((hash << 5) + (str[i]) + (hash >> 2));
-    }
-    
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    
-    //_PJWHash_
-    unsigned int ThreeQuarters = (unsigned int)(((unsigned int)(sizeof(unsigned int) * 8)  * 3) / 4);
-    unsigned int HighBits = (unsigned int)(0xFFFFFFFF) << (sizeof(unsigned int) * 7);
-    hash= 0;
-    a= 0;
-    i= 0;
-	
-	for(i = 0; i < len; i++)
-    {
-      hash = (hash << sizeof(unsigned int)) + (str[i]);
 
-      if((a = hash & HighBits)  != 0)
-      {
-         hash = (( hash ^ (a >> ThreeQuarters)) & (~HighBits));
-      }
-    }   
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  unsigned int hash, bit, index,len;
+  unsigned char bloom;
+
+  unsigned int i;	
+  unsigned int b    = 378551;
+  unsigned int a    = 63689;
+
+  len = TUPLE_SIZE;
+  char str[TUPLE_SIZE+1];
+
+  _strncpy_(str, key,TUPLE_SIZE);
+  str[TUPLE_SIZE]=0;
+
+
+  //_RSHash_	
+  hash=0;i=0;
+  for(i = 0; i < len; i++)
+  {
+    hash = hash * a + (str[i]);
+    a    = a * b;
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;    
+  bloom = tex1Dfetch( tex, index);    
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+
+  //_JSHash_
+  hash = 1315423911;
+  i=0;
+  for(i = 0; i < len; i++)
+  {
+    hash ^= ((hash << 5) + (str[i]) + (hash >> 2));
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+
+  //_PJWHash_
+  unsigned int ThreeQuarters = (unsigned int)(((unsigned int)(sizeof(unsigned int) * 8)  * 3) / 4);
+  unsigned int HighBits = (unsigned int)(0xFFFFFFFF) << (sizeof(unsigned int) * 7);
+  hash= 0;
+  a= 0;
+  i= 0;
+
+  for(i = 0; i < len; i++)
+  {
+    hash = (hash << sizeof(unsigned int)) + (str[i]);
+
+    if((a = hash & HighBits)  != 0)
     {
-		return false;
+      hash = (( hash ^ (a >> ThreeQuarters)) & (~HighBits));
     }
-    
-    //_ELFHash_
-    hash=0;i=0;a=0;
-    for(i = 0; i < len; i++)
-   {
-      hash = (hash << 4) + (str[i]);
-      if((a = hash & 0xF0000000L) != 0)
-      {
-         hash ^= (a >> 24);
-      }
-      hash &= ~a;
-   }
-   
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);  ;  
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  }   
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+  //_ELFHash_
+  hash=0;i=0;a=0;
+  for(i = 0; i < len; i++)
+  {
+    hash = (hash << 4) + (str[i]);
+    if((a = hash & 0xF0000000L) != 0)
     {
-		return false;
+      hash ^= (a >> 24);
     }
-    
-    //_BKDRHash_
-    hash=0;i=0;a=131;
-    for(i = 0; i < len; i++)
-    {
-      hash = (hash * a) + (str[i]);
-    }
-   
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    //_SDBMHash_
-    hash=0;i=0;
-    
-    for(i = 0; i < len; i++)
-   {
-      hash = (str[i]) + (hash << 6) + (hash << 16) - hash;
-   }
-   
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    
-    //_DJBHash_
-    hash = 5381;i=0;
-    for(i = 0; i < len; i++)
-   {
-      hash = ((hash << 5) + hash) + (str[i]);
-   }
-   
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    
-    
-    return true;
+    hash &= ~a;
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);  ;  
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+  //_BKDRHash_
+  hash=0;i=0;a=131;
+  for(i = 0; i < len; i++)
+  {
+    hash = (hash * a) + (str[i]);
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+  //_SDBMHash_
+  hash=0;i=0;
+
+  for(i = 0; i < len; i++)
+  {
+    hash = (str[i]) + (hash << 6) + (hash << 16) - hash;
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+
+  //_DJBHash_
+  hash = 5381;i=0;
+  for(i = 0; i < len; i++)
+  {
+    hash = ((hash << 5) + hash) + (str[i]);
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+
+
+  return true;
 }
 
- __device__ bool contains2(char *key, unsigned int table_size)
+__device__ bool contains2(char *key, unsigned int table_size)
 {	
-	
-	unsigned int hash, bit, index,len;
-	unsigned char bloom;
-	
-	unsigned int i;	
-	
-	
-	len = TUPLE_SIZE;
-	char str[TUPLE_SIZE+1];
-	
-	_strncpy_(str, key,TUPLE_SIZE);
-	str[TUPLE_SIZE]=0;
- 	
-	//_DEKHash_
-     hash = len;i=0;
-    for(i = 0; i < len; i++)
-    {
-		hash = ((hash << 5) ^ (hash >> 27)) ^ (str[i]);
-    }
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    /*
-    //_BPHash_
-    hash=0;i=0;
-    for(i = 0; i < len; i++)
-   {
-      hash = hash << 7 ^ (str[i]);
-   }
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    //_FNVHash_
-   a = 0x811C9DC5;
-   hash= 0;
-   i= 0;
 
-   for(i = 0; i < len; i++)
-   {
-      hash *= a;
-      hash ^= (str[i]);
-   }
-   
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    //_APHash_
-    hash = 0xAAAAAAAA;i=0;
-    for(i = 0; i < len; i++)
-   {
-      hash ^= ((i & 1) == 0) ? (  (hash <<  7) ^ (str[i]) * (hash >> 3)) :
-                               (~((hash << 11) + (str[i]) ^ (hash >> 5)));
-   }
-   
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-  */
-    
-    return true;
- }
- 
- __device__ bool contains3(char *key, unsigned int table_size)
+  unsigned int hash, bit, index,len;
+  unsigned char bloom;
+
+  unsigned int i;	
+
+
+  len = TUPLE_SIZE;
+  char str[TUPLE_SIZE+1];
+
+  _strncpy_(str, key,TUPLE_SIZE);
+  str[TUPLE_SIZE]=0;
+
+  //_DEKHash_
+  hash = len;i=0;
+  for(i = 0; i < len; i++)
+  {
+    hash = ((hash << 5) ^ (hash >> 27)) ^ (str[i]);
+  }
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+  /*
+  //_BPHash_
+  hash=0;i=0;
+  for(i = 0; i < len; i++)
+  {
+  hash = hash << 7 ^ (str[i]);
+  }
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+  return false;
+  }
+
+  //_FNVHash_
+  a = 0x811C9DC5;
+  hash= 0;
+  i= 0;
+
+  for(i = 0; i < len; i++)
+  {
+  hash *= a;
+  hash ^= (str[i]);
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+  return false;
+  }
+
+  //_APHash_
+  hash = 0xAAAAAAAA;i=0;
+  for(i = 0; i < len; i++)
+  {
+  hash ^= ((i & 1) == 0) ? (  (hash <<  7) ^ (str[i]) * (hash >> 3)) :
+  (~((hash << 11) + (str[i]) ^ (hash >> 5)));
+  }
+
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+  return false;
+  }
+   */
+
+  return true;
+}
+
+__device__ bool contains3(char *key, unsigned int table_size)
 {	
-	
-	unsigned int hash, bit, index,len;
-	unsigned char bloom;
-	
-	unsigned int i;	
-		
-	len = TUPLE_SIZE;
-	char str[TUPLE_SIZE+1];
-	
-	_strncpy_(str, key,TUPLE_SIZE);
-	str[TUPLE_SIZE]=0;	
-    
-    //_krHash_
-    hash = 0;
-   for(i = 0; i < len; i++)
-   {
-        hash += str[i];
-    }    
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);    
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    //_ocaml_hash_
-     hash=0;i=0;
-    for (i=0; i<len; i++) {
-        hash = hash*19 + str[i];
-    }
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);   
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    //_sml_hash_
-    hash=0;i=0;
-    for (i=0; i<len; i++) 
-    {
-        hash = 33*hash + 720 + str[i];
-    }
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);   
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    //_stl_hash_
-    _strncpy_(str, key,TUPLE_SIZE);
-    hash=0;i=0;
-    for (i=0; i<len; i++) 
-    {
-        hash = 5*hash + str[i];
-    }
-    hash = hash % (table_size * _char_size_);
-    bit  = hash % _char_size_;
-    index = hash / _char_size_ ;
-    bloom = tex1Dfetch( tex, index);   
-    
-    if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-    {
-		return false;
-    }
-    
-    return true;
- }
- 
+
+  unsigned int hash, bit, index,len;
+  unsigned char bloom;
+
+  unsigned int i;	
+
+  len = TUPLE_SIZE;
+  char str[TUPLE_SIZE+1];
+
+  _strncpy_(str, key,TUPLE_SIZE);
+  str[TUPLE_SIZE]=0;	
+
+  //_krHash_
+  hash = 0;
+  for(i = 0; i < len; i++)
+  {
+    hash += str[i];
+  }    
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);    
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+  //_ocaml_hash_
+  hash=0;i=0;
+  for (i=0; i<len; i++) {
+    hash = hash*19 + str[i];
+  }
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);   
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+  //_sml_hash_
+  hash=0;i=0;
+  for (i=0; i<len; i++) 
+  {
+    hash = 33*hash + 720 + str[i];
+  }
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);   
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+  //_stl_hash_
+  _strncpy_(str, key,TUPLE_SIZE);
+  hash=0;i=0;
+  for (i=0; i<len; i++) 
+  {
+    hash = 5*hash + str[i];
+  }
+  hash = hash % (table_size * _char_size_);
+  bit  = hash % _char_size_;
+  index = hash / _char_size_ ;
+  bloom = tex1Dfetch( tex, index);   
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return false;
+  }
+
+  return true;
+}
+
 //search tuple from bloon filter
 __device__ int lstspct_FindTuple(char *tuple, int numTuples) 
 {
-		
-		//check whether in the bloom filter
-		//if(contains(tuple,numTuples * 4)&&contains2(tuple,numTuples * 4)&&contains3(tuple,numTuples * 4))
-		if(contains(tuple,numTuples * BLOOM_SIZE)&&contains2(tuple,numTuples * BLOOM_SIZE))
-			return 1;
-		else
-			return -1;
+
+  //check whether in the bloom filter
+  //if(contains(tuple,numTuples * 4)&&contains2(tuple,numTuples * 4)&&contains3(tuple,numTuples * 4))
+  if(contains(tuple,numTuples * BLOOM_SIZE)&&contains2(tuple,numTuples * BLOOM_SIZE))
+    return 1;
+  else
+    return -1;
 }
 
 __device__ int d_strTpl_Valid(char *st) 
 {
-		int i;
-		int return_value = 1;
-				
-		if (st == NULL)
-			return_value = 0;
-		else
-		{
-			for (i = 0; i < TUPLE_SIZE; i++) {
-				if (numeric_nuc_index[st[i]] >= 4)
-				{
-					return_value = 0;
-					break;
-				}
-			}			
-		}
-		
-		return return_value;
+  int i;
+  int return_value = 1;
+
+  if (st == NULL)
+    return_value = 0;
+  else
+  {
+    for (i = 0; i < TUPLE_SIZE; i++) {
+      if (numeric_nuc_index[st[i]] >= 4)
+      {
+        return_value = 0;
+        break;
+      }
+    }			
+  }
+
+  return return_value;
 }
 
 //check whether the read is solid or not, by examine each tuple in this read, whether can be found or not in 
 //all the string tuple list
 __device__ int CheckSolid(char *seq, int tupleSize, int numTuples){
-	int p;
-	char tuple[TUPLE_SIZE+1];
-	
-	int return_value = 1;
-		
-	for (p = 0; p < READ_LENGTH - tupleSize +1; p++ ){
-		_strncpy_(tuple, (char*) &seq[p],tupleSize);
-		tuple[tupleSize] = 0;
-		
-		if (lstspct_FindTuple(tuple,numTuples) == -1) {
-			return_value = 0;
-			break;
-		}
-	}
-	
-	return return_value;
+  int p;
+  char tuple[TUPLE_SIZE+1];
+
+  int return_value = 1;
+
+  for (p = 0; p < READ_LENGTH - tupleSize +1; p++ ){
+    _strncpy_(tuple, (char*) &seq[p],tupleSize);
+    tuple[tupleSize] = 0;
+
+    if (lstspct_FindTuple(tuple,numTuples) == -1) {
+      return_value = 0;
+      break;
+    }
+  }
+
+  return return_value;
 }
 
 
 
 __device__ int SolidSubsequence(char *seq, int tupleSize, int &seqStart, int &seqEnd, int numTuples) {
-	int i;
-	int solidSubsequence = 1;
-	
-	//char tempTuple[TUPLE_SIZE+1];
-	char *tempTuple;
-	
-	for (i = seqStart; i < seqEnd - tupleSize + 1; i++) 
-	{				
-		//_strncpy_(tempTuple , (char*) &seq[i],tupleSize);
-		//tempTuple[tupleSize] = 0;
-		
-		tempTuple = &seq[i];
-		if (lstspct_FindTuple(tempTuple,numTuples) == -1) {
-			solidSubsequence = 0;
-			break;
-		}
-	}
-	
+  int i;
+  int solidSubsequence = 1;
 
-	return solidSubsequence;
+  //char tempTuple[TUPLE_SIZE+1];
+  char *tempTuple;
+
+  for (i = seqStart; i < seqEnd - tupleSize + 1; i++) 
+  {				
+    //_strncpy_(tempTuple , (char*) &seq[i],tupleSize);
+    //tempTuple[tupleSize] = 0;
+
+    tempTuple = &seq[i];
+    if (lstspct_FindTuple(tempTuple,numTuples) == -1) {
+      solidSubsequence = 0;
+      break;
+    }
+  }
+
+
+  return solidSubsequence;
 }	
 
 
 __device__ int TrimSequence(char *seq, int tupleSize, int &seqStart, int &seqEnd, int numTuples,int maxTrim) 
 {	
-	int i;
-	seqStart = 0;
-	
-	int flag = 1;
+  int i;
+  seqStart = 0;
 
-	//char tempTuple[TUPLE_SIZE+1];
-	char *tempTuple;
-	
-	//get length of this read
-	int len = seq[READ_LENGTH + 1];
-		
-	for (i = 0; i < len - tupleSize + 1; i++ )
-	{ 
-		//_strncpy_(tempTuple , &seq[i],tupleSize);
-		//tempTuple[tupleSize] = 0;
-		
-		tempTuple = &seq[i];
-		
-		if (lstspct_FindTuple(tempTuple,numTuples) != -1) {
-			break;
-		}
-		
-		// Not solid yet, advance
-		seqStart++;
-	}
-	
-	seqEnd = len;
-	for (i = seqStart + 1; i < len - tupleSize + 1; i++ ) 
-	{	
-		//_strncpy_(tempTuple , &seq[i],tupleSize);
-		//tempTuple[tupleSize] = 0;
-		
-		tempTuple = &seq[i];
-		
-		if (lstspct_FindTuple(tempTuple, numTuples) == -1) {
-			break;
-		}
-	}
-	
-	if (i == len - tupleSize) 
-		// The sequence is not trimmed.
-		seqEnd = len - 1;
-	else 
-		// The sequence is trimmed. Trim end is the index of the first
-		// 'bad' nucleotide. Since seqStart is the index of the first
-		// 'good' nucleotide, seqEnd - seqStart is the length of the
-		// untrimmed seq.  In other words, it's half open 0 based
-		// indexing.
-		seqEnd = i + tupleSize-1;
-		
-	if (seqStart > maxTrim)
-	//		return 0;
-		flag = 0;
-	else if (len - seqEnd > maxTrim)
-		//return 0;
-		flag = 0;
-	else if(SolidSubsequence(seq, tupleSize, seqStart, seqEnd,numTuples) == 0)
-	//		return 0;
-		flag = 0;
-	else
-	{		
-		int newLength = seqEnd - seqStart + 1;
-		
-		for (int s = 0; s < newLength; s++ ) {
-			seq[s] = seq[s + seqStart];
-		}
-		//seq.length = newLength -1;
-		len = newLength -1;
-	}
-	
-	//save the new length
-	//_strncpy_(&seq[READ_LENGTH + 1], itoa1(len),4);
-	//itoa1(len,&seq[READ_LENGTH + 1]);
-	seq[READ_LENGTH + 1] = len;
-	
-	return flag;
+  int flag = 1;
+
+  //char tempTuple[TUPLE_SIZE+1];
+  char *tempTuple;
+
+  //get length of this read
+  int len = seq[READ_LENGTH + 1];
+
+  for (i = 0; i < len - tupleSize + 1; i++ )
+  { 
+    //_strncpy_(tempTuple , &seq[i],tupleSize);
+    //tempTuple[tupleSize] = 0;
+
+    tempTuple = &seq[i];
+
+    if (lstspct_FindTuple(tempTuple,numTuples) != -1) {
+      break;
+    }
+
+    // Not solid yet, advance
+    seqStart++;
+  }
+
+  seqEnd = len;
+  for (i = seqStart + 1; i < len - tupleSize + 1; i++ ) 
+  {	
+    //_strncpy_(tempTuple , &seq[i],tupleSize);
+    //tempTuple[tupleSize] = 0;
+
+    tempTuple = &seq[i];
+
+    if (lstspct_FindTuple(tempTuple, numTuples) == -1) {
+      break;
+    }
+  }
+
+  if (i == len - tupleSize) 
+    // The sequence is not trimmed.
+    seqEnd = len - 1;
+  else 
+    // The sequence is trimmed. Trim end is the index of the first
+    // 'bad' nucleotide. Since seqStart is the index of the first
+    // 'good' nucleotide, seqEnd - seqStart is the length of the
+    // untrimmed seq.  In other words, it's half open 0 based
+    // indexing.
+    seqEnd = i + tupleSize-1;
+
+  if (seqStart > maxTrim)
+    //		return 0;
+    flag = 0;
+  else if (len - seqEnd > maxTrim)
+    //return 0;
+    flag = 0;
+  else if(SolidSubsequence(seq, tupleSize, seqStart, seqEnd,numTuples) == 0)
+    //		return 0;
+    flag = 0;
+  else
+  {		
+    int newLength = seqEnd - seqStart + 1;
+
+    for (int s = 0; s < newLength; s++ ) {
+      seq[s] = seq[s + seqStart];
+    }
+    //seq.length = newLength -1;
+    len = newLength -1;
+  }
+
+  //save the new length
+  //_strncpy_(&seq[READ_LENGTH + 1], itoa1(len),4);
+  //itoa1(len,&seq[READ_LENGTH + 1]);
+  seq[READ_LENGTH + 1] = len;
+
+  return flag;
 
 }
 
@@ -793,222 +793,223 @@ __device__ int TrimSequence(char *seq, int tupleSize, int &seqStart, int &seqEnd
 ////////////////////////////////////////////////////////////////////////////////
 __global__ void fix_errors1(char *d_reads_arr,Param *d_param) 
 {
-	short numSearch=1;
-	nextNuc['G'] = 'A';	nextNuc['A'] = 'C';	nextNuc['C'] = 'T';	nextNuc['T'] = 'G';
-	
-	int c_tid = blockIdx.x * blockDim.x + threadIdx.x;		
-	int round = 0;
-	int total_thread = BLOCK * THREAD;
-	int discardSeq=0;	
-	int trimStart=0, trimEnd=0;
-	
-	int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);	
-	round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
-	
-	int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
-	unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
-	int solid[READ_LENGTH];
-	int s,i,j,m,n,startPos, fixPos=-1,numFixed = 0,numChanges=0;	
-	short return_value = 0,flag = 0,flag1=1;
-	
-	// Cast votes for mutations
-	int p,vp,mut;
-	short numAboveThreshold = 0,newLength,len;
-	short maxVotes = 0,allGood  = 1;
-	int numTies = -1,pindex = 0, mod, pos,current_read_idx;
-	
-	char *tempTuple, *read;
-		
-	for(i=0;i<round;i++)
-	{
-		flag = 0;flag1=1;numFixed = 0;	numChanges=0;	return_value = 0;discardSeq = 0;
-		
-		current_read_idx = c_tid + chunk_bound * i;
-		
-		//check if run out of reads		
-		current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);		
-		
-		//take 1 read per thread	
-		read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
-		
-		//get length of this read
-		len = read[READ_LENGTH + 1];		
-		
-		if (!PrepareSequence(read)) {
-			discardSeq = 1;
-		}
-		else 
-		{			
-			numFixed = 0; fixPos = -1;
-			do{				
-				if(flag)
-					break;
-				else{
-					if (fixPos > 0)
-						startPos = fixPos;
-					else 
-						startPos = 0;
-														
-					for (m = 0; m < READ_LENGTH; m++) {
-						for (int n = 0; n < 4; n++) 
-							//votes[threadIdx.x][m][n] = 0;
-							votes[m][n] = 0;
-					}					
-							
-					for(m=0;m<READ_LENGTH;m++)
-						solid[m] = 0;
-						
-					for (p = startPos; p < len - d_param->tupleSize + 1; p++ ){							
-						tempTuple = &read[p];
-						if (d_strTpl_Valid(tempTuple)){
-							if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
-								solid[p] = 1;							
-							else{								
-								for (vp = 0; vp < d_param->tupleSize; vp++){										
-									mutNuc = nextNuc[read[p + vp]];									
-									read[p + vp] = mutNuc;
-											
-									for (mut = 0; mut < 3; mut++ ){											
-										tempTuple = &read[p];
-											
-										if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)										
-											votes[vp + p][unmasked_nuc_index[mutNuc]]++;																										
-											
-										mutNuc = nextNuc[mutNuc];						
-										read[p + vp] = mutNuc;											
-									}
-								}
-							}
-						}
-					}
-		
-					////////////////vote completed//////////////////////						
-					++numFixed;	
-								
-					//////////////////////fix sequence based on voting in previous step//////////////
-					fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
-	
-					for (p = 0; p < len - d_param->tupleSize + 1; p++ )	{
-						if (solid[p] == 0) {
-							allGood = 0;break;
-						}
-					}
-						
-					if (allGood)
-						// no need to fix this sequence						
-						return_value =  1;					
-					else
-					{					
-						for (p = 0; p < len; p++){ 
-							for (m = 0; m < 4; m++){								
-								if (votes[p][m] > d_param->minVotes)
-									numAboveThreshold++;												
-								
-								if (votes[p][m] >= maxVotes)																
-									maxVotes = votes[p][m];								
-							}
-						}
-								
-						pindex = 0;numTies = -1;
-						
-						// Make sure there aren't multiple possible fixes
-						for (p = 0; p < len; p++){ 
-							for (m = 0; m < 4; m++){
-								if (votes[p][m] == maxVotes){
-									numTies++;
-									maxPos[pindex] = p;
-									maxMod[pindex] = m;
-									pindex++;
-								}
-							}
-						}
-													
-						if (numAboveThreshold > 0 ){							
-							if (numTies < numSearch || (pindex > 1 && maxPos[0] != maxPos[1])){								
-								// Found at least one change to the sequence										
-								for (s = 0; s < numSearch && s < pindex; s++) {
-									mod = maxMod[s];
-									pos = maxPos[s];
-									fixPos = pos;
-									
-									if (mod < 4){
-										prev = read[pos];
-										cur = nuc_char[mod];
-										read[pos] = cur;
-									}									
-								}
-								if( CheckSolid(read,d_param->tupleSize,d_param->numTuples))
-									return_value = 1;
-								else{
-									//reset
-									return_value = 0;
-									//read[pos] = prev;
-								}							
-							} 
-							else 
-							{									
-								return_value = 0;
-							}
-						}
-						else 
-						{
-							return_value = 0;
-						}
-					}
-					
-					
-					//check fix sequence return
-					if( return_value)
-					{
-						flag = 1;
-						numChanges = numFixed;
-						break;
-					}					
-				}			
-			} while (fixPos > 0);
-	
-			/////////////////////////end of solidify////////
+  short numSearch=1;
+  nextNuc['G'] = 'A';	nextNuc['A'] = 'C';	nextNuc['C'] = 'T';	nextNuc['T'] = 'G';
 
-			if (numChanges != 0){
-				if (numChanges > d_param->maxMods) 
-					discardSeq = 1;
-				else
-					discardSeq = 0;
-			}
-			else{
-				if( d_param->numSearch == 2){
-					//removed trim in fix error1
-					discardSeq = 1;
-				}
-				else
-				{
-					// Find the locations of the first solid positions.
-					if (d_param->doTrim)
-					{					
-						if(TrimSequence(read, d_param->tupleSize,trimStart, trimEnd, d_param->numTuples,d_param->maxTrim)){
-							// If there is space for one solid tuple (trimStart < trimEnd - ts+1)
-							// and the subsequence between the trimmed ends is ok, print the
-							// trimmed coordinates.						
-							discardSeq = 0;
-						}
-						else
-							discardSeq = 1;	
-					}
-					else				
-						discardSeq = 1;				
-				}
-			}
-		}
-		
-		if (discardSeq) {
-			read[READ_LENGTH] = 'D'; //F fixed, D: not fixed, discard				
-		}
-		else {
-			read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
-		}		
-		
-		__syncthreads();	
-	}	
+  int c_tid = blockIdx.x * blockDim.x + threadIdx.x;		
+  int round = 0;
+  int total_thread = BLOCK * THREAD;
+  int discardSeq=0;	
+  int trimStart=0, trimEnd=0;
+
+  int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);	
+  round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
+
+  int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
+  unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
+  int solid[READ_LENGTH];
+  int s,i,j,m,n,startPos, fixPos=-1,numFixed = 0,numChanges=0;	
+  short return_value = 0,flag = 0,flag1=1;
+
+  // Cast votes for mutations
+  int p,vp,mut;
+  short numAboveThreshold = 0,newLength,len;
+  short maxVotes = 0,allGood  = 1;
+  int numTies = -1,pindex = 0, mod, pos,current_read_idx;
+
+  char *tempTuple, *read;
+
+
+  for(i=0;i<round;i++)
+  {
+    flag = 0;flag1=1;numFixed = 0;	numChanges=0;	return_value = 0;discardSeq = 0;
+
+    current_read_idx = c_tid + chunk_bound * i;
+
+    //check if run out of reads		
+    current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);		
+
+    //take 1 read per thread	
+    read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
+
+    //get length of this read
+    len = read[READ_LENGTH + 1];		
+
+    if (!PrepareSequence(read)) {
+      discardSeq = 1;
+    }
+    else 
+    {			
+      numFixed = 0; fixPos = -1;
+      do{				
+        if(flag)
+          break;
+        else{
+          if (fixPos > 0)
+            startPos = fixPos;
+          else 
+            startPos = 0;
+
+          for (m = 0; m < READ_LENGTH; m++) {
+            for (int n = 0; n < 4; n++) 
+              //votes[threadIdx.x][m][n] = 0;
+              votes[m][n] = 0;
+          }					
+
+          for(m=0;m<READ_LENGTH;m++)
+            solid[m] = 0;
+
+          for (p = startPos; p < len - d_param->tupleSize + 1; p++ ){							
+            tempTuple = &read[p];
+            if (d_strTpl_Valid(tempTuple)){
+              if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
+                solid[p] = 1;							
+              else{								
+                for (vp = 0; vp < d_param->tupleSize; vp++){										
+                  mutNuc = nextNuc[read[p + vp]];									
+                  read[p + vp] = mutNuc;
+
+                  for (mut = 0; mut < 3; mut++ ){											
+                    tempTuple = &read[p];
+
+                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)										
+                      votes[vp + p][unmasked_nuc_index[mutNuc]]++;																										
+
+                    mutNuc = nextNuc[mutNuc];						
+                    read[p + vp] = mutNuc;											
+                  }
+                }
+              }
+            }
+          }
+
+          ////////////////vote completed//////////////////////						
+          ++numFixed;	
+
+          //////////////////////fix sequence based on voting in previous step//////////////
+          fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
+
+          for (p = 0; p < len - d_param->tupleSize + 1; p++ )	{
+            if (solid[p] == 0) {
+              allGood = 0;break;
+            }
+          }
+
+          if (allGood)
+            // no need to fix this sequence						
+            return_value =  1;					
+          else
+          {					
+            for (p = 0; p < len; p++){ 
+              for (m = 0; m < 4; m++){								
+                if (votes[p][m] > d_param->minVotes)
+                  numAboveThreshold++;												
+
+                if (votes[p][m] >= maxVotes)																
+                  maxVotes = votes[p][m];								
+              }
+            }
+
+            pindex = 0;numTies = -1;
+
+            // Make sure there aren't multiple possible fixes
+            for (p = 0; p < len; p++){ 
+              for (m = 0; m < 4; m++){
+                if (votes[p][m] == maxVotes){
+                  numTies++;
+                  maxPos[pindex] = p;
+                  maxMod[pindex] = m;
+                  pindex++;
+                }
+              }
+            }
+
+            if (numAboveThreshold > 0 ){							
+              if (numTies < numSearch || (pindex > 1 && maxPos[0] != maxPos[1])){								
+                // Found at least one change to the sequence										
+                for (s = 0; s < numSearch && s < pindex; s++) {
+                  mod = maxMod[s];
+                  pos = maxPos[s];
+                  fixPos = pos;
+
+                  if (mod < 4){
+                    prev = read[pos];
+                    cur = nuc_char[mod];
+                    read[pos] = cur;
+                  }									
+                }
+                if( CheckSolid(read,d_param->tupleSize,d_param->numTuples))
+                  return_value = 1;
+                else{
+                  //reset
+                  return_value = 0;
+                  //read[pos] = prev;
+                }							
+              } 
+              else 
+              {									
+                return_value = 0;
+              }
+            }
+            else 
+            {
+              return_value = 0;
+            }
+          }
+
+
+          //check fix sequence return
+          if( return_value)
+          {
+            flag = 1;
+            numChanges = numFixed;
+            break;
+          }					
+        }			
+      } while (fixPos > 0);
+
+      /////////////////////////end of solidify////////
+
+      if (numChanges != 0){
+        if (numChanges > d_param->maxMods) 
+          discardSeq = 1;
+        else
+          discardSeq = 0;
+      }
+      else{
+        if( d_param->numSearch == 2){
+          //removed trim in fix error1
+          discardSeq = 1;
+        }
+        else
+        {
+          // Find the locations of the first solid positions.
+          if (d_param->doTrim)
+          {					
+            if(TrimSequence(read, d_param->tupleSize,trimStart, trimEnd, d_param->numTuples,d_param->maxTrim)){
+              // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
+              // and the subsequence between the trimmed ends is ok, print the
+              // trimmed coordinates.						
+              discardSeq = 0;
+            }
+            else
+              discardSeq = 1;	
+          }
+          else				
+            discardSeq = 1;				
+        }
+      }
+    }
+
+    if (discardSeq) {
+      read[READ_LENGTH] = 'D'; //F fixed, D: not fixed, discard				
+    }
+    else {
+      read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
+    }		
+
+    __syncthreads();	
+  }	
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1018,287 +1019,287 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
 ////////////////////////////////////////////////////////////////////////////////
 __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads) 
 {
-	short numSearch = 2;
-	
-	nextNuc['G'] = 'A';	nextNuc['A'] = 'C';	nextNuc['C'] = 'T';	nextNuc['T'] = 'G';
-	
-	int c_tid = blockIdx.x * blockDim.x + threadIdx.x;		
-	int round = 0;
-	int total_thread = BLOCK * THREAD;
-	int discardSeq=0;	
-	int trimStart=0, trimEnd=0;
-	
-	int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);	
-	round = numReads/chunk_bound + (numReads%chunk_bound == 0 ? 0:1);
-	
-	int maxPos[READ_LENGTH * 4];
-	int maxMod[READ_LENGTH * 4];
-	
-	unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
-	
-	int solid[READ_LENGTH];
-	//__shared__ unsigned char solid[READ_LENGTH];
-	
-	int s,i,j,m,n;
-	int startPos, fixPos=-1;
-	int numFixed = 0,numChanges=0;	
-	short return_value = 0,flag = 0,flag1=1;
-	
-	// Cast votes for mutations
-	int p,vp,mut;
-	short numAboveThreshold = 0;
-	short maxVotes = 0,allGood  = 1;
-	int numTies = -1;
-	int pindex = 0;
-	int mod, pos;	
-	short newLength,len;	
-	int current_read_idx;
-	
-	char *tempTuple, *read;
-	
-	/*
-	Since GPU cannot process all reads at the same time (limited block NO.), the reads are divided 
-	into several rounds to process.		
-	*/	
-	for(i=0;i<round;i++)
-	{
-		flag = 0;	flag1=1;numFixed = 0;numChanges=0;return_value = 0;
-		
-		current_read_idx = c_tid + chunk_bound * i;
-		
-		//check if run out of reads		
-		current_read_idx = (current_read_idx > numReads ? 0:current_read_idx);	
-		
-		//take 1 read per thread
-		read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
+  short numSearch = 2;
 
-		//get length of this read
-		len = read[READ_LENGTH + 1];
-		
-		discardSeq = 0;
-		
-		if (!PrepareSequence(read)) 
-			discardSeq = 1;		
-		else 
-		{
-			numFixed = 0; fixPos = -1;
-			do {				
-				if(flag)
-					break;				
-				else{
-					if (fixPos > 0)
-						startPos = fixPos;
-					else 
-						startPos = 0;
-									
-						for (m = 0; m < READ_LENGTH; m++) {
-							for (int n = 0; n < 4; n++) 
-								votes[m][n] = 0;
-						}
-					
-							
-						for(m=0;m<READ_LENGTH;m++)
-							solid[m] = 0;
-						
-						for (p = startPos; p < len - d_param->tupleSize + 1; p++ ) {
-													
-							tempTuple = &read[p];
-							if (d_strTpl_Valid(tempTuple)) {
-								if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
-									solid[p] = 1;								
-								else{									
-									for (vp = 0; vp < d_param->tupleSize-1; vp++) 
-									{
-										
-										mutNuc = nextNuc[read[p + vp]];										
-										read[p + vp] = mutNuc;
-											
-										for (mut = 0; mut < 3; mut++ ) 
-										{					
-										
-											tempTuple = &read[p];
-											
-											if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
-											{
-												votes[vp + p][unmasked_nuc_index[mutNuc]]++;
-											}
-											
-											//delta = 2
-											for(m=vp+1;m<d_param->tupleSize;m++)
-											{
-												mutNuc2 = nextNuc[read[p + m]];
-												read[p + m] = mutNuc2;	
-												
-												for(n=0;n<3;n++)
-												{
-													tempTuple = &read[p];
-													if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
-													{														
-														votes[vp + p][unmasked_nuc_index[mutNuc]]++;//history
-														votes[m + p][unmasked_nuc_index[mutNuc2]]++;								
-													}
-													
-													mutNuc2 = nextNuc[mutNuc2];
-													read[p + m] = mutNuc2;																																					
-												}
-											}											
-											
-											mutNuc = nextNuc[mutNuc];						
-											read[p + vp] = mutNuc;
-											
-										}
-									}
-								}
-							}
-						}
-		
-						
-						++numFixed;
-						
-						//fix sequence based on voting in previous step
-						fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
-	
-						for (p = 0; p < len - d_param->tupleSize + 1; p++ ) {
-							if (solid[p] == 0) {
-								allGood = 0;
-								break;
-							}
-						}
-						
-						
-						if (allGood) 						
-							// no need to fix this sequence						
-							return_value =  1;						
-						else{
-							for (p = 0; p < len; p++){ 
-								for (m = 0; m < 4; m++) {									
-									if (votes[p][m] > d_param->minVotes)									 
-										numAboveThreshold++;
-								
-									if (votes[p][m] >= maxVotes)										
-										maxVotes = votes[p][m];									
-								}
-							}
-								
-							pindex = 0;numTies = -1;
-							
-							for (p = 0; p < len; p++){ 
-								for (m = 0; m < 4; m++)	{									
-									if (votes[p][m] == maxVotes) {
-										numTies++;
-										
-										maxPos[pindex] = p;
-										maxMod[pindex] = m;
-										pindex++;
-									}
-								}
-							}
-							
-							//second 
-							votes[p][m] = 0;
-							maxVotes = 0;
-							for (p = 0; p < len ; p++){ 
-								for (m = 0; m < 4; m++) {
-																			
-									if (votes[p][m] >= maxVotes)										
-										maxVotes = votes[p][m];									
-								}
-							}
-							for (p = 0; p < len; p++){ 
-								for (m = 0; m < 4; m++)	{									
-									if (votes[p][m] == maxVotes) {										
-										maxPos[pindex] = p;
-										maxMod[pindex] = m;	
-										//pindex++;									
-									}
-								}
-							}
-							
-							__syncthreads();					
-							if (numAboveThreshold > 0 ) 
-							{							
-								//if (numTies < numSearch || (pindex > 1 && maxPos[0] != maxPos[1])){								
-									// Found at least one change to the sequence										
-									for (s = 0; s < 2; s++) {
-										mod = maxMod[s];
-										pos = maxPos[s];
-										fixPos = pos;
-									
-										if (mod < 4){
-											prev = read[pos];
-											cur = nuc_char[mod];
-											read[pos] = nuc_char[mod];											
-										}
-									}
-														
-									return_value = CheckSolid(read,d_param->tupleSize,d_param->numTuples);	
-								//} 
-								//else {									
-									return_value = 0;
-								//}
-							}
-							else {
-								return_value = 0;
-							}
-							__syncthreads();
-						}
-					
-						//check fix sequence return
-						if( return_value){
-							flag = 1;
-							numChanges = numFixed;
-							break;
-						}
+  nextNuc['G'] = 'A';	nextNuc['A'] = 'C';	nextNuc['C'] = 'T';	nextNuc['T'] = 'G';
 
-				}//if flag		
-			} while (fixPos > 0);
-	
-			/////////////////////////end of solidify////////
+  int c_tid = blockIdx.x * blockDim.x + threadIdx.x;		
+  int round = 0;
+  int total_thread = BLOCK * THREAD;
+  int discardSeq=0;	
+  int trimStart=0, trimEnd=0;
 
-			if (numChanges != 0) {
-				if (numChanges > d_param->maxMods){	
-					discardSeq = 1;
-					//_strncpy_(read , original, READ_LENGTH + 2);
-				}
-				else
-				{
-					discardSeq = 0;
-				}
-			}			
-			else
-			{	
-				
-				// Find the locations of the first solid positions.
-				if (d_param->doTrim){					
-					if(TrimSequence(read, d_param->tupleSize,trimStart, trimEnd, d_param->numTuples,d_param->maxTrim)){
-						// If there is space for one solid tuple (trimStart < trimEnd - ts+1)
-						// and the subsequence between the trimmed ends is ok, print the
-						// trimmed coordinates.
-						
-						discardSeq = 0;
-					}
-					else
-						discardSeq = 1;									
-					
-				}
-				else 
-				{				
-					discardSeq = 1;
-				}
-				
-			}
-		}		
-		
-		if (discardSeq) {
-			read[READ_LENGTH] = 'D'; //last char for indicator
-		}
-		else {
-			read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
-		}
-		
-		__syncthreads();	
-	}
-	
+  int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);	
+  round = numReads/chunk_bound + (numReads%chunk_bound == 0 ? 0:1);
+
+  int maxPos[READ_LENGTH * 4];
+  int maxMod[READ_LENGTH * 4];
+
+  unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
+
+  int solid[READ_LENGTH];
+  //__shared__ unsigned char solid[READ_LENGTH];
+
+  int s,i,j,m,n;
+  int startPos, fixPos=-1;
+  int numFixed = 0,numChanges=0;	
+  short return_value = 0,flag = 0,flag1=1;
+
+  // Cast votes for mutations
+  int p,vp,mut;
+  short numAboveThreshold = 0;
+  short maxVotes = 0,allGood  = 1;
+  int numTies = -1;
+  int pindex = 0;
+  int mod, pos;	
+  short newLength,len;	
+  int current_read_idx;
+
+  char *tempTuple, *read;
+
+  /*
+     Since GPU cannot process all reads at the same time (limited block NO.), the reads are divided 
+     into several rounds to process.		
+   */	
+  for(i=0;i<round;i++)
+  {
+    flag = 0;	flag1=1;numFixed = 0;numChanges=0;return_value = 0;
+
+    current_read_idx = c_tid + chunk_bound * i;
+
+    //check if run out of reads		
+    current_read_idx = (current_read_idx > numReads ? 0:current_read_idx);	
+
+    //take 1 read per thread
+    read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
+
+    //get length of this read
+    len = read[READ_LENGTH + 1];
+
+    discardSeq = 0;
+
+    if (!PrepareSequence(read)) 
+      discardSeq = 1;		
+    else 
+    {
+      numFixed = 0; fixPos = -1;
+      do {				
+        if(flag)
+          break;				
+        else{
+          if (fixPos > 0)
+            startPos = fixPos;
+          else 
+            startPos = 0;
+
+          for (m = 0; m < READ_LENGTH; m++) {
+            for (int n = 0; n < 4; n++) 
+              votes[m][n] = 0;
+          }
+
+
+          for(m=0;m<READ_LENGTH;m++)
+            solid[m] = 0;
+
+          for (p = startPos; p < len - d_param->tupleSize + 1; p++ ) {
+
+            tempTuple = &read[p];
+            if (d_strTpl_Valid(tempTuple)) {
+              if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
+                solid[p] = 1;								
+              else{									
+                for (vp = 0; vp < d_param->tupleSize-1; vp++) 
+                {
+
+                  mutNuc = nextNuc[read[p + vp]];										
+                  read[p + vp] = mutNuc;
+
+                  for (mut = 0; mut < 3; mut++ ) 
+                  {					
+
+                    tempTuple = &read[p];
+
+                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
+                    {
+                      votes[vp + p][unmasked_nuc_index[mutNuc]]++;
+                    }
+
+                    //delta = 2
+                    for(m=vp+1;m<d_param->tupleSize;m++)
+                    {
+                      mutNuc2 = nextNuc[read[p + m]];
+                      read[p + m] = mutNuc2;	
+
+                      for(n=0;n<3;n++)
+                      {
+                        tempTuple = &read[p];
+                        if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
+                        {														
+                          votes[vp + p][unmasked_nuc_index[mutNuc]]++;//history
+                          votes[m + p][unmasked_nuc_index[mutNuc2]]++;								
+                        }
+
+                        mutNuc2 = nextNuc[mutNuc2];
+                        read[p + m] = mutNuc2;																																					
+                      }
+                    }											
+
+                    mutNuc = nextNuc[mutNuc];						
+                    read[p + vp] = mutNuc;
+
+                  }
+                }
+              }
+            }
+          }
+
+
+          ++numFixed;
+
+          //fix sequence based on voting in previous step
+          fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
+
+          for (p = 0; p < len - d_param->tupleSize + 1; p++ ) {
+            if (solid[p] == 0) {
+              allGood = 0;
+              break;
+            }
+          }
+
+
+          if (allGood) 						
+            // no need to fix this sequence						
+            return_value =  1;						
+          else{
+            for (p = 0; p < len; p++){ 
+              for (m = 0; m < 4; m++) {									
+                if (votes[p][m] > d_param->minVotes)									 
+                  numAboveThreshold++;
+
+                if (votes[p][m] >= maxVotes)										
+                  maxVotes = votes[p][m];									
+              }
+            }
+
+            pindex = 0;numTies = -1;
+
+            for (p = 0; p < len; p++){ 
+              for (m = 0; m < 4; m++)	{									
+                if (votes[p][m] == maxVotes) {
+                  numTies++;
+
+                  maxPos[pindex] = p;
+                  maxMod[pindex] = m;
+                  pindex++;
+                }
+              }
+            }
+
+            //second 
+            votes[p][m] = 0;
+            maxVotes = 0;
+            for (p = 0; p < len ; p++){ 
+              for (m = 0; m < 4; m++) {
+
+                if (votes[p][m] >= maxVotes)										
+                  maxVotes = votes[p][m];									
+              }
+            }
+            for (p = 0; p < len; p++){ 
+              for (m = 0; m < 4; m++)	{									
+                if (votes[p][m] == maxVotes) {										
+                  maxPos[pindex] = p;
+                  maxMod[pindex] = m;	
+                  //pindex++;									
+                }
+              }
+            }
+
+            __syncthreads();					
+            if (numAboveThreshold > 0 ) 
+            {							
+              //if (numTies < numSearch || (pindex > 1 && maxPos[0] != maxPos[1])){								
+              // Found at least one change to the sequence										
+              for (s = 0; s < 2; s++) {
+                mod = maxMod[s];
+                pos = maxPos[s];
+                fixPos = pos;
+
+                if (mod < 4){
+                  prev = read[pos];
+                  cur = nuc_char[mod];
+                  read[pos] = nuc_char[mod];											
+                }
+              }
+
+              return_value = CheckSolid(read,d_param->tupleSize,d_param->numTuples);	
+              //} 
+              //else {									
+              return_value = 0;
+              //}
+            }
+            else {
+              return_value = 0;
+            }
+            __syncthreads();
+          }
+
+          //check fix sequence return
+          if( return_value){
+            flag = 1;
+            numChanges = numFixed;
+            break;
+          }
+
+        }//if flag		
+      } while (fixPos > 0);
+
+      /////////////////////////end of solidify////////
+
+      if (numChanges != 0) {
+        if (numChanges > d_param->maxMods){	
+          discardSeq = 1;
+          //_strncpy_(read , original, READ_LENGTH + 2);
+        }
+        else
+        {
+          discardSeq = 0;
+        }
+      }			
+      else
+      {	
+
+        // Find the locations of the first solid positions.
+        if (d_param->doTrim){					
+          if(TrimSequence(read, d_param->tupleSize,trimStart, trimEnd, d_param->numTuples,d_param->maxTrim)){
+            // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
+            // and the subsequence between the trimmed ends is ok, print the
+            // trimmed coordinates.
+
+            discardSeq = 0;
+          }
+          else
+            discardSeq = 1;									
+
+        }
+        else 
+        {				
+          discardSeq = 1;
+        }
+
+      }
+    }		
+
+    if (discardSeq) {
+      read[READ_LENGTH] = 'D'; //last char for indicator
+    }
+    else {
+      read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
+    }
+
+    __syncthreads();	
+  }
+
 }
 
 #endif // #ifndef _FIXERRORSVOTING_KERNEL_H_

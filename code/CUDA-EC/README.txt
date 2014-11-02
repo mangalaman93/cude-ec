@@ -54,11 +54,10 @@ OPTIONAL PARAMETERS:
 -minMult       						  -- multiplicity (default 6)
 -search        							-- number of error to be fixed in each read (default 1)
 
-
 --------
 OUTPUT:
 --------
 
-CUDA-EC outputs two files in the same directiroy as the input file, one is the fixed file contains the fixed and trimmed reads, the another is the file contains the discarded reads. 
+CUDA-EC outputs two files in the output directry, one is the fixed file contains the fixed and trimmed reads, the another is the file contains the discarded reads. 
 
 

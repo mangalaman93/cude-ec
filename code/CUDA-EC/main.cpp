@@ -298,81 +298,81 @@ int main(int argc, char** argv)
 	printf( "arr_size %d \n",arr_size);
 	
 	char *reads_arr = (char *)malloc(sizeof(char)*arr_size);	
-	if(reads_arr== NULL){
-		printf("Malloc reads array memory failed \n");
-		exit(1);
-	}
-	
-	printf("Malloc reads array memory finished \n"); 
+  if(reads_arr== NULL){
+    printf("Malloc reads array memory failed \n");
+    exit(1);
+  }
 
-	//prepare reads array in CPU
-	for(i = 0; i< NUM_READS; i ++){
-		//init reads array
-		strncpy(&reads_arr[i*(readLen + 2)],ReadsList[i].seq , (readLen+1));
-		//init the 'fixed' flag as all discarded 'D'
-		reads_arr[i*(readLen + 2) + readLen] = 'D';
-		//init read length, last 1 BYTE		
-		reads_arr[i*(readLen + 2) + readLen + 1] = ReadsList[i].length;		
-	}	
+  printf("Malloc reads array memory finished \n"); 
 
-	Param *h_param = (Param *)malloc(sizeof(Param));
-	h_param->tupleSize = tupleSize;
-	h_param->doTrim = doTrim;
-	h_param->doDeletion = doDeletion;
-	h_param->doInsertion = doInsertion;
-	h_param->maxMods = maxMods;
-	h_param->minVotes = minVotes;
-	h_param->maxTrim = maxTrim;
-	h_param->numTuples = numPastThresh;	
-	h_param->numSearch = numSearch;
-	h_param->NUM_OF_READS = NUM_READS;
-	h_param->readLen = readLen;
-	printf( "Alloc Param done....\n");	
-	
-	start=clock();//caculate GPU time
-	
-	/*********************************************************************************/
-	/**************************** Call CUDA main function ****************************/
-	//runTest(hash_table,h_param,h_iReadSeq,table_size);
-	runTest(hash_table,h_param,reads_arr,table_size,seqOut,discardOut,argc,argv);
-	
-	/*********************************************************************************/
+  //prepare reads array in CPU
+  for(i = 0; i< NUM_READS; i ++){
+    //init reads array
+    strncpy(&reads_arr[i*(readLen + 2)],ReadsList[i].seq , (readLen+1));
+    //init the 'fixed' flag as all discarded 'D'
+    reads_arr[i*(readLen + 2) + readLen] = 'D';
+    //init read length, last 1 BYTE		
+    reads_arr[i*(readLen + 2) + readLen + 1] = ReadsList[i].length;		
+  }	
 
-	end = clock();	
-	printf("The run time for fixing error in GPU is: %f secs.\n", (double)(end-start)/CLOCKS_PER_SEC);
+  Param *h_param = (Param *)malloc(sizeof(Param));
+  h_param->tupleSize = tupleSize;
+  h_param->doTrim = doTrim;
+  h_param->doDeletion = doDeletion;
+  h_param->doInsertion = doInsertion;
+  h_param->maxMods = maxMods;
+  h_param->minVotes = minVotes;
+  h_param->maxTrim = maxTrim;
+  h_param->numTuples = numPastThresh;	
+  h_param->numSearch = numSearch;
+  h_param->NUM_OF_READS = NUM_READS;
+  h_param->readLen = readLen;
+  printf( "Alloc Param done....\n");	
 
-	printf("Write output to file....\n");
+  start=clock();//caculate GPU time
 
-	//write to fixed file
-	FILE *fout;	
-	int len;
+  /*********************************************************************************/
+  /**************************** Call CUDA main function ****************************/
+  //runTest(hash_table,h_param,h_iReadSeq,table_size);
+  runTest(hash_table,h_param,reads_arr,table_size,seqOut,discardOut,argc,argv);
 
-	for(int i=0;i<NUM_READS;i++){	
-		if(reads_arr[i*(readLen + 2)+readLen]== 'D')
-			fout = discardOut;
-		else
-			fout = seqOut;
-				  
-		fprintf(fout, ">%s\n", ReadsList[i].namestr);		
-		len = reads_arr[i*(readLen + 2) + readLen + 1];
+  /*********************************************************************************/
 
-		for (j = 0; j < len; j++) 
-		{
-			fprintf(fout,"%c", reads_arr[i*(readLen + 2)+j]);
-		}
-		fprintf(fout,"\n");		
-	}
-	
-	
-	// cleanup memory
-	printf("...releasing CPU memory.\n");	
-	free(hash_table);
-	free(reads_arr);
-	ReadsList.clear();
-	free(h_param);
-	
-	//free(read);		
-	fclose(seqOut);
-	fclose(discardOut);
+  end = clock();	
+  printf("The run time for fixing error in GPU is: %f secs.\n", (double)(end-start)/CLOCKS_PER_SEC);
+
+  printf("Write output to file....\n");
+
+  //write to fixed file
+  FILE *fout;	
+  int len;
+
+  for(int i=0;i<NUM_READS;i++){	
+    if(reads_arr[i*(readLen + 2)+readLen]== 'D')
+      fout = discardOut;
+    else
+      fout = seqOut;
+
+    fprintf(fout, ">%s\n", ReadsList[i].namestr);		
+    len = reads_arr[i*(readLen + 2) + readLen + 1];
+
+    for (j = 0; j < len; j++) 
+    {
+      fprintf(fout,"%c", reads_arr[i*(readLen + 2)+j]);
+    }
+    fprintf(fout,"\n");		
+  }
+
+
+  // cleanup memory
+  printf("...releasing CPU memory.\n");	
+  free(hash_table);
+  free(reads_arr);
+  ReadsList.clear();
+  free(h_param);
+
+  //free(read);		
+  fclose(seqOut);
+  fclose(discardOut);
 }
 

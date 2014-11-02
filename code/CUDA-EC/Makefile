@@ -1,6 +1,6 @@
 EXECUTABLE=CUDA-EC
-CUFILES=FixErrorsVoting.cu
-CU_DEPS=FixErrorsVoting_kernel.cu
+CUFILES=FixErrorsVoting.cu 
+CUDEPS=FixErrorsVoting_kernel.cu
 CCFILES=hash_function.cpp utils.cpp main.cpp
 
 #To resolve dependency with cutil.h
@@ -10,15 +10,16 @@ OLDCUDAINCS=./common/inc
 
 ################################################################################
 # Locate nvcc 
-CUDAROOT=/opt/cuda-4.2/cuda
-NVCC=$(CUDAROOT)/bin/nvcc
+NVCC=nvcc
+ARCH=-arch=sm_20
+#define ARGS for command line debug 
 
-all: cudacode.o 
+all: cudacode.o  $(CCFILES)
 	make -C ./common
-	$(NVCC) -I$(OLDCUDAINCS) -L$(OLDCUDALIBS) -lcutil_x86_64 $(CCFILES) cudacode.o -o  $(EXECUTABLE)
+	$(NVCC) $(ARCH) $(ARGS) -I$(OLDCUDAINCS) -L$(OLDCUDALIBS) -lcutil_x86_64 $(CCFILES) cudacode.o -o  $(EXECUTABLE)
 
-cudacode.o:
-	$(NVCC) -I$(OLDCUDAINCS) -c $(CUFILES) -o cudacode.o
+cudacode.o: $(CUFILES) $(CUDEPS)
+	$(NVCC) $(ARCH) $(ARGS) -I$(OLDCUDAINCS) -c $(CUFILES) -o cudacode.o
 
 clean:
 	rm -f $(EXECUTABLE)
