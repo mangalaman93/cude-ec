@@ -190,48 +190,48 @@ unsigned int krHash(char *str, unsigned int len)
 {
       unsigned int hash = 0;
       int c;
-    
+
       while (c = *str++)
         hash += c;
-                      
+
       return hash;
-} 
+}
 /**/
-unsigned int ocaml_hash(char *str, unsigned int len) 
+unsigned int ocaml_hash(char *str, unsigned int len)
     {
       unsigned int hash = 0;
       unsigned int i;
-    
+
       for (i=0; i<len; i++) {
         hash = hash*19 + str[i];
       }
-    
+
       return hash;
     }
 
 unsigned int sml_hash(char *str, unsigned int len) {
       unsigned int hash = 0;
       unsigned int i;
-    
-      for (i=0; i<len; i++) 
+
+      for (i=0; i<len; i++)
       {
         hash = 33*hash + 720 + str[i];
       }
-    
+
       return hash;
     }
 
 
- unsigned int stl_hash(char *str, unsigned int len) 
+ unsigned int stl_hash(char *str, unsigned int len)
     {
       unsigned int hash = 0;
       unsigned int i;
-    
-      for (i=0; i<len; i++) 
+
+      for (i=0; i<len; i++)
       {
         hash = 5*hash + str[i];
       }
-    
+
       return hash;
     }
 

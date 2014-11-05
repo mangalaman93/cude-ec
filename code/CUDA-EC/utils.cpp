@@ -6,34 +6,34 @@
 #include "utils.h"
 #include "common.h"
 
-	
+
 
 void MakeRC(char* seq, int len, char* &rev){
   int s;
   char n, c;
- 
+
   for (s = 0; s < len; s++) {
     n = seq[len-s-1];
     c = comp_ascii[n];
     if (c != 0)
       rev[s] = c;
-    else 
+    else
       // Nonstandard nuleotide (masked, etc). Leave as is.
       rev[s] = seq[len-s-1];
   }
  }
 
 bool bfQuery(unsigned int hash_vector[NUM_HASH],unsigned char *bloom1,int nBloom, int minMult)
-{		
-	unsigned int bit,index,position;		
+{
+	unsigned int bit,index,position;
 
 	for(int j = 0; j < NUM_HASH; j++) //15 hash functions
 	{
 		bit  = hash_vector[j] % char_size; //0 - 7
 		index = hash_vector[j] / char_size;
-		
-		position = (index * char_size + bit) * minMult + nBloom; 
-		
+
+		position = (index * char_size + bit) * minMult + nBloom;
+
 		//re-caculate new index and bit based on position
 		bit = position % char_size;
 		index = position / char_size;
@@ -43,21 +43,21 @@ bool bfQuery(unsigned int hash_vector[NUM_HASH],unsigned char *bloom1,int nBloom
 			return false;
 		}
 	}
-    
-    return true; 
+
+    return true;
 }
 
 void bfInsert(unsigned int hash_vector[NUM_HASH],unsigned char *bloom1,int nBloom, int minMult)
-{	
+{
 	unsigned int bit,index,position;
 
-	for(int i= 0; i < NUM_HASH; i++) 
-	{	
+	for(int i= 0; i < NUM_HASH; i++)
+	{
 		bit  = hash_vector[i] % char_size;
 		index = hash_vector[i] / char_size;
-		
-		position = (index * char_size + bit) * minMult + nBloom; 
-		
+
+		position = (index * char_size + bit) * minMult + nBloom;
+
 		//re-caculate new index and bit based on position
 		bit = position % char_size;
 		index = position / char_size;
@@ -68,9 +68,9 @@ void bfInsert(unsigned int hash_vector[NUM_HASH],unsigned char *bloom1,int nBloo
 
 
 void bf_insert(char *tuple,int table_size, unsigned char *bloom1, hash_function hash_function_list[],int tuple_len)
-{	
+{
 	unsigned int hash;
-	for(int i= 0; i < NUM_HASH; i++) 
+	for(int i= 0; i < NUM_HASH; i++)
 	{
 		 hash = hash_function_list[i](tuple,tuple_len) % (table_size * char_size);
 		bloom1[hash / char_size] |= bit_mask[hash % char_size];
@@ -79,22 +79,22 @@ void bf_insert(char *tuple,int table_size, unsigned char *bloom1, hash_function 
 
 //Check whether bloom filter contains "string key"
  bool bf_query(char *key, unsigned int table_size,unsigned char *bloom1,hash_function hash_function_list[],int tuple_len)
-{	
+{
 	unsigned int hash, bit, index,len;
 	unsigned char bloom;
 
 	char str[TUPLE_SIZE+2];
-	
+
 	strncpy(str, key,TUPLE_SIZE+1);
 	str[TUPLE_SIZE+1]=0;
 
 	for(int j = 0; j < NUM_HASH; j++) //15 hash functions
 	{
-			 
+
 		hash = hash_function_list[j](str,tuple_len) % (table_size * char_size);
 
 		bit  = hash % char_size;
-		index = hash / char_size ;    
+		index = hash / char_size ;
 		bloom = bloom1[index];
 
 		if ((bloom & bit_mask[bit]) != bit_mask[bit])
@@ -102,8 +102,8 @@ void bf_insert(char *tuple,int table_size, unsigned char *bloom1, hash_function 
 			return false;
 		}
 	}
-    
-    return true; 
+
+    return true;
 }
 
 
@@ -113,9 +113,9 @@ void bf_insert(char *tuple,int table_size, unsigned char *bloom1, hash_function 
 		dnas->seq[i] = unmasked_nuc[dnas->seq[i]];
 	}
 }
- 
- char UnmaskedValue(char numericNuc) { 
-    if (numericNuc < 0) 
+
+ char UnmaskedValue(char numericNuc) {
+    if (numericNuc < 0)
       return (-numericNuc -1) % 4;
     else
       return numericNuc;
@@ -131,42 +131,42 @@ int GetSeq(FILE *in, DNASequence *sequence)
 
 	if (feof(in))
 		return 0;
-	
-	p = fgetc(in);	
+
+	p = fgetc(in);
 	if(p == '\0' || p== '\n'|| p == ' ')
 	{
 		return 0;
 	}
 
-	if( p == '>') 
-	{			
-		fgets(sequence->namestr, MAX_REC_LEN, in); 
+	if( p == '>')
+	{
+		fgets(sequence->namestr, MAX_REC_LEN, in);
 
 		//remove newline feed
 		newbuflen = strlen(sequence->namestr);
-		if (sequence->namestr[newbuflen - 1] == '\n') 
+		if (sequence->namestr[newbuflen - 1] == '\n')
 			sequence->namestr[newbuflen - 1] = '\0';
 
 		sequence->namestr[NAMESTR_LEN-1]='\0';
 	 }
-		
+
 	fgets(sequence->seq, MAX_REC_LEN, in);
 
-	//remove newline feed	
+	//remove newline feed
 	newbuflen = strlen(sequence->seq);
-		
+
 	if ((sequence->seq[newbuflen - 1] == '\n') || (sequence->seq[newbuflen - 1] == '#') )
-		sequence->seq[newbuflen - 1] = '\0';	
+		sequence->seq[newbuflen - 1] = '\0';
 
 	sequence->length = strlen(sequence->seq);
 	dnas_RemoveRepeats(sequence);
-	
-	return 1; 
+
+	return 1;
 }
 
-	
 
-	
+
+
 
 void PrintUsage() {
 	printf("fixErrorsVoting   Fix errors in reads using spectral alignment with \n");

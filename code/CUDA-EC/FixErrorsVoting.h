@@ -3,7 +3,7 @@
 
 #include "hash_function.h"
 
-//Must define read length and tuple size as it used in kernel, which cannot be dynamic allocate memory. 
+//Must define read length and tuple size as it used in kernel, which cannot be dynamic allocate memory.
 //In char[READ_LENGTH+1]
 #define READ_LENGTH 35
 #define TUPLE_SIZE 20
@@ -25,23 +25,23 @@
 typedef struct {
   short length;
   //int  _masked;
-  //int _ascii;		
+  //int _ascii;
   //int fixed;
   char namestr[NAMESTR_LEN];
   char seq[READ_LENGTH+1];
 }DNASequence;
 
 
-typedef struct{	 
-  //char *spectrumType; 
-  short doTrim; 
+typedef struct{
+  //char *spectrumType;
+  short doTrim;
   short doDeletion;
-  short doInsertion; 
-  short maxMods; 
-  short minVotes; 
+  short doInsertion;
+  short maxMods;
+  short minVotes;
   short maxTrim;
   int   numTuples;
-  short numSearch;	
+  short numSearch;
   short tupleSize;
   int   NUM_OF_READS;
   short readLen;

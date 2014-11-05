@@ -1,0 +1,17 @@
+nvprof --print-gpu-trace --metrics tex_cache_hit_rate,tex_cache_throughput,l2_texture_read_hit_rate,l2_texture_read_throughput,tex_cache_transactions,tex_utilization ./CUDA-EC -f /work/alurugroup/chirag/CUDA-EC/input/SRR001665.fasta -t 21 -o /work/alurugroup/chirag/CUDA-EC/output/SRR001665.fasta.fixed -d /work/alurugroup/chirag/CUDA-EC/output/SRR001665.fasta.discards -r 36 -search 1 -minMult 5
+==7389== NVPROF is profiling process 7389, command: ./CUDA-EC -f /work/alurugroup/chirag/CUDA-EC/input/SRR001665.fasta -t 21 -o /work/alurugroup/chirag/CUDA-EC/output/SRR001665.fasta.fixed -d /work/alurugroup/chirag/CUDA-EC/output/SRR001665.fasta.discards -r 36 -search 1 -minMult 5
+Running.... in main....readLen: 36, numSearch: 1
+Reading sequence from fasta file...Read seq done....NUM_READS: 20816447 
+Alloc bloom1 memory done..., 1588 MB allocated
+Total 37733135 past threshhold (minMult = 5) 
+The run time for buliding bloom filter is: 989.370000 secs.
+arr_size 791024986 
+Malloc reads array memory finished 
+Alloc Param done....
+Error when parsing command line argument string.
+Using device 0: Tesla K20m
+==7389== Warning: Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+==7389== Error: Internal profiling error 2900:999.
+======== Error: Application returned non-zero code 30
+y from CPU to GPU done...
+Running Kernel with 256 Block, 256 Thread...

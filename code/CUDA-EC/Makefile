@@ -1,18 +1,18 @@
 EXECUTABLE=CUDA-EC
-CUFILES=FixErrorsVoting.cu 
+CUFILES=FixErrorsVoting.cu
 CUDEPS=FixErrorsVoting_kernel.cu
 CCFILES=hash_function.cpp utils.cpp main.cpp
 
 #To resolve dependency with cutil.h
 OLDCUDALIBS=./common/lib
 OLDCUDAINCS=./common/inc
-	
+
 
 ################################################################################
-# Locate nvcc 
+# Locate nvcc
 NVCC=nvcc
 ARCH=-arch=sm_20
-#define ARGS for command line debug 
+#define ARGS for command line debug
 
 all: cudacode.o  $(CCFILES)
 	make -C ./common
