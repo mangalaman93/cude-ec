@@ -79,9 +79,9 @@ extern "C" void runTest(unsigned char *hash_table,
 	unsigned char *dev_hash;	
 	cudaMalloc( (void**)&dev_hash, table_size );
 	// part2, copy memory to device
-    cudaMemcpy( dev_hash, hash_table, table_size, cudaMemcpyHostToDevice );
+  cudaMemcpy( dev_hash, hash_table, table_size, cudaMemcpyHostToDevice );
 	// part2a, bind texture
-    cudaBindTexture(0, tex, dev_hash );	
+  cudaBindTexture(0, tex, dev_hash );	
 	printf("Bind texture done..\n");	
 	
 	char *d_reads_arr;	
@@ -95,14 +95,14 @@ extern "C" void runTest(unsigned char *hash_table,
 	CUT_SAFE_CALL( cutStartTimer( timer));			
 	
 	//allocate memory on Device
-	CUDA_SAFE_CALL(cudaMalloc((void**) &d_reads_arr, sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS));
-	CUDA_SAFE_CALL(cudaMalloc((void**) &d_param, sizeof(Param)));
+	gpuErrchk( cudaMalloc((void**) &d_reads_arr, sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS) );
+	gpuErrchk( cudaMalloc((void**) &d_param, sizeof(Param)) );
 				
 	printf( "Allocate memory on device done...\n");			
 	
 	//copy from CPU to GPU
-	CUDA_SAFE_CALL(cudaMemcpy(d_reads_arr,reads_arr,sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS,cudaMemcpyHostToDevice));	
-	CUDA_SAFE_CALL(cudaMemcpy(d_param,h_param,sizeof(Param),cudaMemcpyHostToDevice));	
+	gpuErrchk( cudaMemcpy(d_reads_arr,reads_arr,sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS,cudaMemcpyHostToDevice) );	
+	gpuErrchk( cudaMemcpy(d_param,h_param,sizeof(Param),cudaMemcpyHostToDevice) );	
 		
 	printf( "Copy from CPU to GPU done...\n");
 
@@ -116,13 +116,12 @@ extern "C" void runTest(unsigned char *hash_table,
 	fix_errors1<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param);
 		
   gpuErrchk( cudaPeekAtLastError() );
-  gpuErrchk( cudaDeviceSynchronize() );
 		
 	CUT_SAFE_CALL(cutStopTimer(timer));
 	totaltime = cutGetTimerValue(timer);
 		
 	//copy from GPU to CPU
-	CUDA_SAFE_CALL(cudaMemcpy(reads_arr,d_reads_arr, sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS, cudaMemcpyDeviceToHost));	
+	gpuErrchk( cudaMemcpy(reads_arr,d_reads_arr, sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS, cudaMemcpyDeviceToHost) );	
 		
 	printf("GPU pure time: %f msec\n", totaltime);
 	printf( "Copy from GPU to CPU done...\n");
@@ -172,8 +171,7 @@ extern "C" void runTest(unsigned char *hash_table,
 			
 		//fix error number 2
 		fix_errors2<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param,numUnfixed);		
-			
-		CUT_CHECK_ERROR("Kernel execution failed");
+    gpuErrchk( cudaPeekAtLastError() );
 			
 		CUT_SAFE_CALL(cutStopTimer(timer));
 		totaltime = cutGetTimerValue(timer);
