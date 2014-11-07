@@ -1,0 +1,18 @@
+nvprof --print-gpu-trace --metrics tex_cache_hit_rate,tex_cache_throughput,l2_texture_read_hit_rate,l2_texture_read_throughput,tex_cache_transactions,tex_utilization ./CUDA-EC -f /work/alurugroup/chirag/CUDA-EC/input/SRR016146.fasta -t 21 -o /work/alurugroup/chirag/CUDA-EC/output/SRR016146.fasta.fixed -d /work/alurugroup/chirag/CUDA-EC/output/SRR016146.fasta.discards -r 36 -search 1 -minMult 5
+==7054== NVPROF is profiling process 7054, command: ./CUDA-EC -f /work/alurugroup/chirag/CUDA-EC/input/SRR016146.fasta -t 21 -o /work/alurugroup/chirag/CUDA-EC/output/SRR016146.fasta.fixed -d /work/alurugroup/chirag/CUDA-EC/output/SRR016146.fasta.discards -r 36 -search 1 -minMult 5
+Running.... in main....readLen: 36, numSearch: 1
+Reading sequence from fasta file...Read seq done....NUM_READS: 4443912 
+Alloc bloom1 memory done..., 1356 MB allocated
+Total 6098260 past threshhold (minMult = 5) 
+The run time for buliding bloom filter is: 210.390000 secs.
+arr_size 168868656 
+Malloc reads array memory finished 
+Alloc Param done....
+Error when parsing command line argument string.
+Using device 0: Tesla K20m
+==7054== Warning: Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+==7054== Profiling application: ./CUDA-EC -f /work/alurugroup/chirag/CUDA-EC/input/SRR016146.fasta -t 21 -o /work/alurugroup/chirag/CUDA-EC/output/SRR016146.fasta.fixed -d /work/alurugroup/chirag/CUDA-EC/output/SRR016146.fasta.discards -r 36 -search 1 -minMult 5
+==7054== Profiling result:
+         Device          Context           Stream                Kernel  Texture Cache Hit Rate  Texture Cache Throughput  L2 Hit Rate (Texture Reads)  L2 Throughput (Texture Reads)  Texture Cache Transactions  Texture Cache Utilization
+                                                                                              %                      MB/s                            %                           MB/s                                                       
+ Tesla K20m (0)                1                7  fix_errors1(char*, P                   28.27                419.292492                         2.09                     321.158304                   238795927                 <OVERFLOW>
