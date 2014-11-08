@@ -64,7 +64,9 @@ __constant__ unsigned char _bit_mask_[8] = {
 };
 
 __device__ char nextNuc[256];
-
+__device__ unsigned long long total_bloom_query_count=0;
+__device__ unsigned long long no_bloom_query_count=0;
+__device__ unsigned long long yes_bloom_query_count=0;
 
 __constant__ char unmasked_nuc[256] = {0, 1, 2, 3, 'N', 'R', 'Y', 'W', 'S', 'M',     // 9
   'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',    // 19
@@ -630,10 +632,14 @@ __device__ int lstspct_FindTuple(char *tuple, int numTuples)
 
   //check whether in the bloom filter
   //if(contains(tuple,numTuples * 4)&&contains2(tuple,numTuples * 4)&&contains3(tuple,numTuples * 4))
-  if(contains(tuple,numTuples * BLOOM_SIZE)&&contains2(tuple,numTuples * BLOOM_SIZE))
+  atomicAdd(&total_bloom_query_count, 1);
+  if(contains(tuple,numTuples * BLOOM_SIZE)&&contains2(tuple,numTuples * BLOOM_SIZE)) {
+    atomicAdd(&yes_bloom_query_count, 1);
     return 1;
-  else
+  } else {
+    atomicAdd(&no_bloom_query_count, 1);
     return -1;
+  }
 }
 
 __device__ int d_strTpl_Valid(char *st)

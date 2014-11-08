@@ -16,7 +16,7 @@ echo "Node:" `hostname`
 echo "Current directory: ${PWD}"
 
 #Set these variables before run
-FILENAME=SRR006331.fasta
+FILENAME=SRR1552370.fasta
 READLENGTH=36
 
 KMERSIZE=21
