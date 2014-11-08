@@ -185,7 +185,7 @@ int main(int argc, char** argv)
   }
 
   //reset bloom filter
-  for(i = 0; i < ext_filter_size; ++i){
+  for(long i = 0; i < ext_filter_size; ++i){
     bloom1[i] = 0;
   }
 
