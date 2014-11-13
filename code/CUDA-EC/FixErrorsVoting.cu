@@ -116,11 +116,13 @@ extern "C" void runTest(unsigned char *hash_table,
 	fix_errors1<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param);
 
 	// bloom count
-	unsigned long long total, yes, no;
+	unsigned long long total, yes, no, countBits;
 	cudaMemcpyFromSymbol((void*)&total, (const char*)&total_bloom_query_count, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol((void*)&yes, (const char*)&yes_bloom_query_count, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol((void*)&no, (const char*)&no_bloom_query_count, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
+	cudaMemcpyFromSymbol((void*)&countBits, (const char*)&set_bits_negative_queries, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
 	printf("total:%lu, yes:%lu, no:%lu\n", total, yes, no);
+	printf("average bits checked in case of negative queries:%g \n", double(countBits)/no);
 
   gpuErrchk( cudaPeekAtLastError() );
 

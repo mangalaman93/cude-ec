@@ -66,6 +66,7 @@ __constant__ unsigned char _bit_mask_[8] = {
 __device__ char nextNuc[256];
 __device__ unsigned long long total_bloom_query_count=0;
 __device__ unsigned long long no_bloom_query_count=0;
+__device__ unsigned long long set_bits_negative_queries=0;
 __device__ unsigned long long yes_bloom_query_count=0;
 
 __constant__ char unmasked_nuc[256] = {0, 1, 2, 3, 'N', 'R', 'Y', 'W', 'S', 'M',     // 9
@@ -298,7 +299,7 @@ __device__ int PrepareSequence(char *read)
 
 
 //Check whether bloom filter contains "string key"
-__device__ bool contains(char *key, unsigned int table_size)
+__device__ int contains(char *key, unsigned int table_size)
 {
 
   unsigned int hash, bit, index,len;
@@ -329,7 +330,7 @@ __device__ bool contains(char *key, unsigned int table_size)
   bloom = tex1Dfetch( tex, index);
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
+    return 1;     //False
   }
 
 
@@ -347,7 +348,7 @@ __device__ bool contains(char *key, unsigned int table_size)
   bloom = tex1Dfetch( tex, index);
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
+    return 2;     //Treated as false by the caller
   }
 
 
@@ -373,7 +374,7 @@ __device__ bool contains(char *key, unsigned int table_size)
   bloom = tex1Dfetch( tex, index);
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
+    return 3;
   }
 
   //_ELFHash_
@@ -395,7 +396,7 @@ __device__ bool contains(char *key, unsigned int table_size)
 
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
+    return 4;
   }
 
   //_BKDRHash_
@@ -411,7 +412,7 @@ __device__ bool contains(char *key, unsigned int table_size)
   bloom = tex1Dfetch( tex, index);
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
+    return 5;
   }
 
   //_SDBMHash_
@@ -429,7 +430,7 @@ __device__ bool contains(char *key, unsigned int table_size)
 
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
+    return 6;
   }
 
 
@@ -447,15 +448,15 @@ __device__ bool contains(char *key, unsigned int table_size)
 
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
+    return 7;
   }
 
 
 
-  return true;
+  return 8;       //True (All bits said so)
 }
 
-__device__ bool contains2(char *key, unsigned int table_size)
+__device__ int contains2(char *key, unsigned int table_size)
 {
 
   unsigned int hash, bit, index,len;
@@ -483,160 +484,29 @@ __device__ bool contains2(char *key, unsigned int table_size)
 
   if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
   {
-    return false;
-  }
-  /*
-  //_BPHash_
-  hash=0;i=0;
-  for(i = 0; i < len; i++)
-  {
-  hash = hash << 7 ^ (str[i]);
-  }
-  hash = hash % (table_size * _char_size_);
-  bit  = hash % _char_size_;
-  index = hash / _char_size_ ;
-  bloom = tex1Dfetch( tex, index);
-
-  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-  {
-  return false;
+    return 1;   //false
   }
 
-  //_FNVHash_
-  a = 0x811C9DC5;
-  hash= 0;
-  i= 0;
-
-  for(i = 0; i < len; i++)
-  {
-  hash *= a;
-  hash ^= (str[i]);
-  }
-
-  hash = hash % (table_size * _char_size_);
-  bit  = hash % _char_size_;
-  index = hash / _char_size_ ;
-  bloom = tex1Dfetch( tex, index);
-
-  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-  {
-  return false;
-  }
-
-  //_APHash_
-  hash = 0xAAAAAAAA;i=0;
-  for(i = 0; i < len; i++)
-  {
-  hash ^= ((i & 1) == 0) ? (  (hash <<  7) ^ (str[i]) * (hash >> 3)) :
-  (~((hash << 11) + (str[i]) ^ (hash >> 5)));
-  }
-
-  hash = hash % (table_size * _char_size_);
-  bit  = hash % _char_size_;
-  index = hash / _char_size_ ;
-  bloom = tex1Dfetch( tex, index);
-
-  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-  {
-  return false;
-  }
-   */
-
-  return true;
+  return 2;     //true
 }
 
-__device__ bool contains3(char *key, unsigned int table_size)
-{
-
-  unsigned int hash, bit, index,len;
-  unsigned char bloom;
-
-  unsigned int i;
-
-  len = TUPLE_SIZE;
-  char str[TUPLE_SIZE+1];
-
-  _strncpy_(str, key,TUPLE_SIZE);
-  str[TUPLE_SIZE]=0;
-
-  //_krHash_
-  hash = 0;
-  for(i = 0; i < len; i++)
-  {
-    hash += str[i];
-  }
-  hash = hash % (table_size * _char_size_);
-  bit  = hash % _char_size_;
-  index = hash / _char_size_ ;
-  bloom = tex1Dfetch( tex, index);
-
-  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-  {
-    return false;
-  }
-
-  //_ocaml_hash_
-  hash=0;i=0;
-  for (i=0; i<len; i++) {
-    hash = hash*19 + str[i];
-  }
-  hash = hash % (table_size * _char_size_);
-  bit  = hash % _char_size_;
-  index = hash / _char_size_ ;
-  bloom = tex1Dfetch( tex, index);
-
-  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-  {
-    return false;
-  }
-
-  //_sml_hash_
-  hash=0;i=0;
-  for (i=0; i<len; i++)
-  {
-    hash = 33*hash + 720 + str[i];
-  }
-  hash = hash % (table_size * _char_size_);
-  bit  = hash % _char_size_;
-  index = hash / _char_size_ ;
-  bloom = tex1Dfetch( tex, index);
-
-  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-  {
-    return false;
-  }
-
-  //_stl_hash_
-  _strncpy_(str, key,TUPLE_SIZE);
-  hash=0;i=0;
-  for (i=0; i<len; i++)
-  {
-    hash = 5*hash + str[i];
-  }
-  hash = hash % (table_size * _char_size_);
-  bit  = hash % _char_size_;
-  index = hash / _char_size_ ;
-  bloom = tex1Dfetch( tex, index);
-
-  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
-  {
-    return false;
-  }
-
-  return true;
-}
 
 //search tuple from bloon filter
 __device__ int lstspct_FindTuple(char *tuple, int numTuples)
 {
 
   //check whether in the bloom filter
-  //if(contains(tuple,numTuples * 4)&&contains2(tuple,numTuples * 4)&&contains3(tuple,numTuples * 4))
   atomicAdd(&total_bloom_query_count, 1);
-  if(contains(tuple,numTuples * BLOOM_SIZE)&&contains2(tuple,numTuples * BLOOM_SIZE)) {
+  int firstCheck=0, secondCheck=0;
+  firstCheck = contains(tuple,numTuples * BLOOM_SIZE);
+  if (firstCheck==8)
+    secondCheck = contains2(tuple,numTuples * BLOOM_SIZE);
+  if(firstCheck==8 && secondCheck==2) {
     atomicAdd(&yes_bloom_query_count, 1);
     return 1;
-  } else {
+  } 
+  else { 
+    atomicAdd(&set_bits_negative_queries, firstCheck);
     atomicAdd(&no_bloom_query_count, 1);
     return -1;
   }
