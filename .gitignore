@@ -1,0 +1,25 @@
+# Project folders 
+code/CUDA-EC/common/obj
+code/CUDA-EC/BATCH_ERRORS
+code/CUDA-EC/BATCH_OUTPUT
+
+
+### C++ ###
+# Compiled Object files                                                         
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe                                                                           
+*.out
+*.app
+
+
