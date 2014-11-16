@@ -272,7 +272,14 @@ int main(int argc, char** argv)
 
   for(i=0;i<numPastThresh;i++){
     //insert
-    for(j = 0; j < NUM_HASH; j++) {
+    for(j = 0; j < 1; j++) {
+      strcpy(tempTuple,tupleList[i].c_str());
+
+      //hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size * char_size);
+      hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size);
+      hash_table[hash / char_size] |= bit_mask[hash % char_size];
+    }
+    for(j = 1; j < NUM_HASH; j++) {
       strcpy(tempTuple,tupleList[i].c_str());
 
       hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size * char_size);
