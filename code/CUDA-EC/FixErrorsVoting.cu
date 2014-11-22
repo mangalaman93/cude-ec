@@ -80,12 +80,12 @@ extern "C" void runTest(unsigned char *hash_table,
 	// part2, copy memory to device
   cudaMemcpy( dev_hash, hash_table, table_size, cudaMemcpyHostToDevice );
 	// part2a, bind texture
-  cudaBindTexture(0, tex, dev_hash );
-	printf("Bind texture done..\n");
-
-	char *d_reads_arr;
-	Param *d_param;
-
+  cudaBindTexture(0, tex, dev_hash );	
+	printf("Bind texture done..\n");	
+	
+	char *d_reads_arr;	
+	Param *d_param;	
+	
 	//CALL KERNEL MULTIPLE TIME
 
 	unsigned int timer = 0;
@@ -96,13 +96,13 @@ extern "C" void runTest(unsigned char *hash_table,
 	//allocate memory on Device
 	gpuErrchk( cudaMalloc((void**) &d_reads_arr, sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS) );
 	gpuErrchk( cudaMalloc((void**) &d_param, sizeof(Param)) );
-
-	printf( "Allocate memory on device done...\n");
-
+				
+	printf( "Allocate memory on device done...\n");			
+	
 	//copy from CPU to GPU
-	gpuErrchk( cudaMemcpy(d_reads_arr,reads_arr,sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS,cudaMemcpyHostToDevice) );
-	gpuErrchk( cudaMemcpy(d_param,h_param,sizeof(Param),cudaMemcpyHostToDevice) );
-
+	gpuErrchk( cudaMemcpy(d_reads_arr,reads_arr,sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS,cudaMemcpyHostToDevice) );	
+	gpuErrchk( cudaMemcpy(d_param,h_param,sizeof(Param),cudaMemcpyHostToDevice) );	
+		
 	printf( "Copy from CPU to GPU done...\n");
 
 
@@ -116,13 +116,12 @@ extern "C" void runTest(unsigned char *hash_table,
 	fix_errors1<<<Block_dim,Thread_dim,(h_param->readLen + 2)*THREAD>>>(d_reads_arr,d_param);
 
   gpuErrchk( cudaPeekAtLastError() );
-
 	CUT_SAFE_CALL(cutStopTimer(timer));
 	totaltime = cutGetTimerValue(timer);
 
 	//copy from GPU to CPU
-	gpuErrchk( cudaMemcpy(reads_arr,d_reads_arr, sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS, cudaMemcpyDeviceToHost) );
-
+	gpuErrchk( cudaMemcpy(reads_arr,d_reads_arr, sizeof(char)*(h_param->readLen + 2)*h_param->NUM_OF_READS, cudaMemcpyDeviceToHost) );	
+		
 	printf("GPU pure time: %f msec\n", totaltime);
 	printf( "Copy from GPU to CPU done...\n");
 
@@ -170,9 +169,15 @@ extern "C" void runTest(unsigned char *hash_table,
 		printf( "Running Kernel with %d Block, %d Thread...\n",BLOCK,THREAD);
 
 		//fix error number 2
+<<<<<<< HEAD
 		fix_errors2<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param,numUnfixed);
     gpuErrchk( cudaPeekAtLastError() );
 
+=======
+		fix_errors2<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param,numUnfixed);		
+    gpuErrchk( cudaPeekAtLastError() );
+			
+>>>>>>> a66768cf459837e646c20d15edb75b42db6efa11
 		CUT_SAFE_CALL(cutStopTimer(timer));
 		totaltime = cutGetTimerValue(timer);
 
