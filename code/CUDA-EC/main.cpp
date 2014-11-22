@@ -290,25 +290,6 @@ int main(int argc, char** argv)
 
   printf("The run time for buliding bloom filter is: %f secs.\n", (double)(end-start)/CLOCKS_PER_SEC);
 
-  // counting number of 1s in the bloom filter [Aman]
-  unsigned long long one_count = 0;
-  for(unsigned int i = 0; i < table_size; ++i) {
-    char c = hash_table[i];
-    for(int j=0; j<8; j++,c>>1) {
-      one_count += c&1;
-    }
-  }
-
-  // counting number of 1s in the bloom filter [Aman]
-  unsigned long long zero_count = 0;
-  for(unsigned int i = 0; i < table_size; ++i) {
-    char c = hash_table[i];
-    for(int j=0; j<8; j++,c>>1) {
-      zero_count += (c^1)&1;
-    }
-  }
-  printf("In bloom filter, ones:%lu, zeros:%lu, total:%lu\n", one_count, zero_count, table_size*8);
-
   /* Prepare host side reads array.
    ** Each read consist of DNA sequence + 1 char (flag) + 1 char (read length)
    */

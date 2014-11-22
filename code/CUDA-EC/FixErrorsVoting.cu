@@ -70,7 +70,6 @@ extern "C" void runTest(unsigned char *hash_table,
 						int argc,
 						char** argv)
 {
-
   // Cuda init
   CUT_DEVICE_INIT(argc,argv);
 
@@ -113,16 +112,8 @@ extern "C" void runTest(unsigned char *hash_table,
 	//call kernel
 	printf( "Running Kernel with %d Block, %d Thread...\n",BLOCK,THREAD);
 
-	fix_errors1<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param);
-
-	// bloom count
-	unsigned long long total, yes, no, countBits;
-	cudaMemcpyFromSymbol((void*)&total, (const char*)&total_bloom_query_count, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
-	cudaMemcpyFromSymbol((void*)&yes, (const char*)&yes_bloom_query_count, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
-	cudaMemcpyFromSymbol((void*)&no, (const char*)&no_bloom_query_count, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
-	cudaMemcpyFromSymbol((void*)&countBits, (const char*)&set_bits_negative_queries, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
-	printf("total:%lu, yes:%lu, no:%lu\n", total, yes, no);
-	printf("average bits checked in case of negative queries:%g \n", double(countBits)/no);
+  //Given number of bytes required for shared memory
+	fix_errors1<<<Block_dim,Thread_dim,(h_param->readLen + 2)*THREAD>>>(d_reads_arr,d_param);
 
   gpuErrchk( cudaPeekAtLastError() );
 
