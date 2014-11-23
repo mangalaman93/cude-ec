@@ -169,15 +169,9 @@ extern "C" void runTest(unsigned char *hash_table,
 		printf( "Running Kernel with %d Block, %d Thread...\n",BLOCK,THREAD);
 
 		//fix error number 2
-<<<<<<< HEAD
-		fix_errors2<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param,numUnfixed);
-    gpuErrchk( cudaPeekAtLastError() );
-
-=======
 		fix_errors2<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param,numUnfixed);		
     gpuErrchk( cudaPeekAtLastError() );
 			
->>>>>>> a66768cf459837e646c20d15edb75b42db6efa11
 		CUT_SAFE_CALL(cutStopTimer(timer));
 		totaltime = cutGetTimerValue(timer);
 

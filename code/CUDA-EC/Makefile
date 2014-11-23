@@ -10,7 +10,7 @@ OLDCUDAINCS=./common/inc
 
 ################################################################################
 # Locate nvcc
-NVCC=/opt/cuda-4.2/cuda/bin/nvcc
+NVCC=nvcc
 ARCH=-arch=sm_20
 #define ARGS for command line debug
 

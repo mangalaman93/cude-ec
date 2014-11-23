@@ -98,7 +98,6 @@ int main(int argc, char** argv)
     }
     else if (strcmp(argv[argi], "-trim") == 0) {
       doTrim = 1;
-<<<<<<< HEAD
     }
     else if (strcmp(argv[argi], "-maxTrim") == 0) {
       doTrim = 1;
@@ -113,176 +112,6 @@ int main(int argc, char** argv)
     }
     argi++;
   }
-
-  printf("Running.... in main....readLen: %d, numSearch: %d\n", readLen, numSearch);
-
-  seqOut = fopen(outputFileName,"w");
-
-  seqIn = fopen(readsFile,"r");
-  if(!seqIn)
-  {
-    printf("Please check your fasta file name, FILE not exist! \n\n");
-    exit(0);
-  }
-
-  if (discardFileName != "")
-    discardOut = fopen(discardFileName,"w");
-
-  //read and its reverse
-  char *Sequence = new char[readLen+1];
-  char *Rc_sequence = new char[readLen+1];
-  char *tempTuple = new char[readLen+1];
-
-  /*
-   **Read from the fasta file and store the comment and read in a DNASequence vector.
-   */
-  printf( "Reading sequence from fasta file...");
-
-  vector<DNASequence> ReadsList;
-  //	DNASequence *read = (DNASequence *)malloc(sizeof(DNASequence));
-  DNASequence read;
-
-  while (GetSeq(seqIn, &read))
-  {
-    ReadsList.push_back(read);
-    NUM_READS ++;
-
-    //printf("Reads: %d\n", NUM_READS);
-  }
-  NUM_READS --;
-  printf( "Read seq done....NUM_READS: %d \n",NUM_READS);
-
-
-  /*Preprocessing. Counting tuples with mult > minMult.
-   **Counting each read and its reverse from the fasta file
-   **Using bloom filter to do the counting. Total minMult number of bloom filters needed
-   */
-  start = clock();
-  //hash_function hash_function_list[]     = {&RSHash,&JSHash,&PJWHash,&ELFHash,&BKDRHash,&SDBMHash,&DJBHash,&DEKHash,&BPHash,&FNVHash,&APHash,&krHash,&ocaml_hash,&sml_hash,&stl_hash};
-  hash_function hash_function_list[]     = {&RSHash,&JSHash,&PJWHash,&ELFHash,&BKDRHash,&SDBMHash,&DJBHash,&DEKHash};
-
-  /*
-   **Bloom filter size. For large dataset, will be smaller.
-   **6 bloom filters in the same hash position.
-   **k=8, 4:m/n=32,5.73e-06; k=4,m/n=32,0.000191;k=4,m/n=64,1.35e-5
-   */
-  short BLOOM1_BIT;
-
-  if(NUM_READS < 6000000)
-    BLOOM1_BIT = 4; //
-  else
-    BLOOM1_BIT = 1;
-
-  unsigned int ext_filter_size = NUM_READS * (readLen - tupleSize + 1) * BLOOM1_BIT * minMult;
-  unsigned int filter_size = NUM_READS * (readLen - tupleSize + 1) * BLOOM1_BIT;
-
-  unsigned char *bloom1 = (unsigned char *)malloc(sizeof(unsigned char)*ext_filter_size);
-  if(!bloom1){
-    printf("Cannot allocate bloom1 memory on CPU\n");
-    exit(-1);
-  }
-  else{
-    printf( "Alloc bloom1 memory done..., %d MB allocated\n",sizeof(unsigned char)*ext_filter_size/(1024*1024));
-  }
-
-  //reset bloom filter
-  for(i = 0; i < ext_filter_size; ++i){
-    bloom1[i] = 0;
-  }
-
-
-  for(i = 0; i< NUM_READS; i ++){
-    strncpy(Sequence,ReadsList[i].seq,READ_LENGTH);
-    Sequence[readLen] = 0;
-
-    //printf("Processing read %d \n",i);
-    for(j=0; j< readLen - tupleSize + 1; j++){
-      //each tuple
-      strncpy(tempTuple, &Sequence[j],TUPLE_SIZE);
-      tempTuple[tupleSize] = '\0';
-
-      //get hash values for this tuple
-      for(m= 0; m < NUM_HASH; m++)
-        hash_vector[m] = hash_function_list[m](tempTuple,tupleSize) % (filter_size * char_size);
-
-      //each hash position holds 6 bits
-      if(bfQuery(hash_vector,bloom1,5,minMult)){
-        //do nothing
-      }else if(bfQuery(hash_vector,bloom1,4,minMult))
-      {
-        tupleList.push_back(tempTuple);
-        numPastThresh ++;
-        bfInsert(hash_vector,bloom1,5,minMult);
-      }else if(bfQuery(hash_vector,bloom1,3,minMult))
-        bfInsert(hash_vector,bloom1,4,minMult);
-      else if(bfQuery(hash_vector,bloom1,2,minMult))
-        bfInsert(hash_vector,bloom1,3,minMult);
-      else if(bfQuery(hash_vector,bloom1,1,minMult))
-        bfInsert(hash_vector,bloom1,2,minMult);
-      else if(bfQuery(hash_vector,bloom1,0,minMult))
-        bfInsert(hash_vector,bloom1,1,minMult);
-      else
-        bfInsert(hash_vector,bloom1,0,minMult);
-    }
-
-    //reverse count
-    MakeRC(Sequence, readLen,Rc_sequence);
-    Rc_sequence[readLen] = 0;
-
-    for(j=0; j< readLen - tupleSize + 1; j++){
-      //each tuple
-      strncpy(tempTuple, &Rc_sequence[j],tupleSize);
-      tempTuple[tupleSize] = '\0';
-
-      //get hash values for this tuple
-      for(m= 0; m < NUM_HASH; m++){
-        hash_vector[m] = hash_function_list[m](tempTuple,TUPLE_SIZE) % (filter_size * char_size);
-      }
-
-      //each hash position holds 6 bits
-      if(bfQuery(hash_vector,bloom1,5,minMult)){
-        //do nothing
-      }else if(bfQuery(hash_vector,bloom1,4,minMult)){
-        tupleList.push_back(tempTuple);
-        numPastThresh ++;
-        bfInsert(hash_vector,bloom1,5,minMult);
-      }else if(bfQuery(hash_vector,bloom1,3,minMult))
-        bfInsert(hash_vector,bloom1,4,minMult);
-      else if(bfQuery(hash_vector,bloom1,2,minMult))
-        bfInsert(hash_vector,bloom1,3,minMult);
-      else if(bfQuery(hash_vector,bloom1,1,minMult))
-        bfInsert(hash_vector,bloom1,2,minMult);
-      else if(bfQuery(hash_vector,bloom1,0,minMult))
-        bfInsert(hash_vector,bloom1,1,minMult);
-      else
-        bfInsert(hash_vector,bloom1,0,minMult);
-
-    }
-  }
-
-  printf("Total %d past threshhold (minMult = %d) \n", numPastThresh,minMult);
-
-  free(bloom1);
-
-  //Building Bloom Filter	for GPU cuda
-  unsigned int table_size = numPastThresh * BLOOM_SIZE;//m bits, n keys, m/n=32, 1 char = 8 bits, 1 char * 4 = 32 bits, increase to 64
-
-  unsigned char *hash_table = (unsigned char *)malloc(sizeof(unsigned char)*table_size);
-  for(unsigned int i = 0; i < table_size; ++i)
-    hash_table[i] = 0;
-
-  for(i=0;i<numPastThresh;i++){
-    //insert
-    for(j = 0; j < NUM_HASH; j++) {
-      strcpy(tempTuple,tupleList[i].c_str());
-
-      hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size * char_size);
-      hash_table[hash / char_size] |= bit_mask[hash % char_size];
-    }
-  }
-
-
-  printf("Running.... in main....readLen: %d, numSearch: %d\n", readLen, numSearch);
 
   seqOut = fopen(outputFileName,"w");
 
@@ -454,7 +283,6 @@ int main(int argc, char** argv)
       hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size * char_size);
       hash_table[hash / char_size] |= bit_mask[hash % char_size];
     }
->>>>>>> a66768cf459837e646c20d15edb75b42db6efa11
   }
 
   //free memory, vector string

@@ -37,6 +37,9 @@
  * example application.
  * Device code.
  */
+/*
+TODO: Fixed array sizes assuming read length = 36, malloc not working
+*/
 
 #ifndef _FIXERRORSVOTING_KERNEL_H_
 #define _FIXERRORSVOTING_KERNEL_H_
@@ -665,7 +668,7 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
   short numSearch=1;
   nextNuc['G'] = 'A';	nextNuc['A'] = 'C';	nextNuc['C'] = 'T';	nextNuc['T'] = 'G';
 
-  int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
+  //int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
   int round = 0;
   int total_thread = BLOCK * THREAD;
   int discardSeq=0;
@@ -674,12 +677,16 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
   int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);
   round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
 
-  int* maxPos = (int *)malloc(d_param->readLen * 4);
-  int* maxMod = (int *)malloc(d_param->readLen * 4);
+  //int* maxPos = (int *)malloc(d_param->readLen * 4 * sizeof(int));
+  //int* maxMod = (int *)malloc(d_param->readLen * 4 * sizeof(int));
+  int maxPos[36 * 4];
+  int maxMod[36 * 4];
 
-  unsigned char* votes = (unsigned char *)malloc(d_param->readLen*4*sizeof(unsigned char));
-  unsigned char mutNuc, /*mutNuc2, prev,*/ cur;
-  int* solid = (int *)malloc(sizeof(int)*d_param->readLen);
+  //unsigned char* votes = new unsigned char[d_param->readLen*4];
+  unsigned char votes[36][4];
+  unsigned char mutNuc /*, mutNuc2, prev,cur*/;
+  //int* solid = new int[d_param->readLen];
+  int solid[36];
 
   int s,i,m,startPos, fixPos=-1,numFixed = 0,numChanges=0;
   short return_value = 0,flag = 0;
@@ -688,7 +695,7 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
   int p,vp,mut;
   short numAboveThreshold = 0,len;
   short maxVotes = 0,allGood  = 1;
-  int numTies = -1,pindex = 0, mod, pos,current_read_idx;
+  int numTies = -1,pindex = 0, mod, pos/*,current_read_idx*/;
 
 
   //Access to shared memory
@@ -700,18 +707,20 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
   {
     flag = 0;numFixed = 0;	numChanges=0;	return_value = 0;discardSeq = 0;
 
-    current_read_idx = c_tid + chunk_bound * i;
+    //current_read_idx = c_tid + chunk_bound * i;
 
     //check if run out of reads
-    current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
+    //current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
 
     //Place reads in the shared memory after every round
-    //Considering start offset for this block 
-    //Go till end offset for this block
+    //Computing start offset for this warp 
+    //Go till end offset for this warp
     //Fill the shared buffer while coalescing global memory accesses
     //Doing it at a warp level will remove the requirement of syncing threads
     int startOffsetForThisWarp = ((threadIdx.x/WARPSIZE)*WARPSIZE + blockIdx.x*blockDim.x + chunk_bound * i)* (d_param->readLen + 2);
-    int endOffsetForThisWarp = ((threadIdx.x/WARPSIZE + 1)*WARPSIZE + blockIdx.x*blockDim.x + chunk_bound * i)* (d_param->readLen + 2);
+    int endOffsetForThisWarp = min(\
+    ((threadIdx.x/WARPSIZE + 1)*WARPSIZE + blockIdx.x*blockDim.x + chunk_bound * i)* (d_param->readLen + 2),\
+    d_param->NUM_OF_READS * (d_param->readLen + 2));
 
     for (int j= startOffsetForThisWarp; j< endOffsetForThisWarp; j += WARPSIZE) 
     {
@@ -742,7 +751,8 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
           for (m = 0; m < d_param->readLen; m++) {
             for (int n = 0; n < 4; n++)
               //votes[threadIdx.x][m][n] = 0;
-              votes[m * d_param->readLen + n] = 0;
+              //votes[m * d_param->readLen + n] = 0;
+              votes[m][n] = 0;
           }
 
           for(m=0;m<d_param->readLen;m++)
@@ -762,7 +772,8 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
                     tempTuple = &read[p];
 
                     if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
-                      votes[(vp + p)*d_param->readLen + unmasked_nuc_index[mutNuc]]++;
+                      //votes[(vp + p)*d_param->readLen + unmasked_nuc_index[mutNuc]]++;
+                      votes[vp + p][unmasked_nuc_index[mutNuc]]++;
 
                     mutNuc = nextNuc[mutNuc];
                     read[p + vp] = mutNuc;
@@ -791,11 +802,12 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
           {
             for (p = 0; p < len; p++){
               for (m = 0; m < 4; m++){
-                if (votes[p * d_param->readLen + m] > d_param->minVotes)
+                //if (votes[p * d_param->readLen + m] > d_param->minVotes)
+                if (votes[p][m]> d_param->minVotes)
                   numAboveThreshold++;
 
-                if (votes[p * d_param->readLen + m] >= maxVotes)
-                  maxVotes = votes[p * d_param->readLen + m];
+                if (votes[p][m] >= maxVotes)
+                  maxVotes = votes[p][m];
               }
             }
 
@@ -804,7 +816,7 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
             // Make sure there aren't multiple possible fixes
             for (p = 0; p < len; p++){
               for (m = 0; m < 4; m++){
-                if (votes[p * d_param->readLen + m] == maxVotes){
+                if (votes[p][m] == maxVotes){
                   numTies++;
                   maxPos[pindex] = p;
                   maxMod[pindex] = m;
@@ -823,8 +835,8 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
 
                   if (mod < 4){
                     //prev = read[pos];
-                    cur = nuc_char[mod];
-                    read[pos] = cur;
+                    //cur = nuc_char[mod];
+                    read[pos] = nuc_char[mod];
                   }
                 }
                 if( CheckSolid(read,d_param->tupleSize,d_param->numTuples, d_param->readLen))
@@ -897,8 +909,19 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
       read[d_param->readLen] = 'F'; //F fixed, D: not fixed, discard
     }
 
+    //Save back results to global memory
+    for (int j= startOffsetForThisWarp; j< endOffsetForThisWarp; j += WARPSIZE) 
+    {
+      if(j+threadIdx.x%WARPSIZE < endOffsetForThisWarp)
+        d_reads_arr[j+threadIdx.x%WARPSIZE] = readsInOneRound_Warp[j-startOffsetForThisWarp + threadIdx.x%WARPSIZE];
+    }
+
+
     __syncthreads();
   }
+  //free(votes);
+  //free(solid);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -924,9 +947,9 @@ __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads)
   int* maxPos = (int *)malloc(d_param->readLen * 4);
   int* maxMod = (int *)malloc(d_param->readLen * 4);
 
-  unsigned char* votes = (unsigned char *)malloc(d_param->readLen*4*sizeof(unsigned char));
+  unsigned char* votes = new unsigned char[d_param->readLen*4];
   unsigned char mutNuc, mutNuc2 /*,prev, cur*/;
-  int* solid = (int *)malloc(sizeof(int)*d_param->readLen);
+  int* solid = new int[d_param->readLen];
 
   int s,i,m,n;
   int startPos, fixPos=-1;
@@ -1187,7 +1210,8 @@ __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads)
 
     __syncthreads();
   }
-
+  free(votes);
+  free(solid);
 }
 
 #endif // #ifndef _FIXERRORSVOTING_KERNEL_H_
