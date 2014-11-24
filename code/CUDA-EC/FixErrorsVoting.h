@@ -5,7 +5,7 @@
 
 //Must define read length and tuple size as it used in kernel, which cannot be dynamic allocate memory. 
 //In char[READ_LENGTH+1]
-#define READ_LENGTH 35
+#define READ_LENGTH 36
 #define TUPLE_SIZE 20
 
 //#define NUM_OF_READS 1153738 // NC000913: 9279350//mw2:3857879 //NC007146:3828980 //NC001137:1153738 //NC001139: 2181894
