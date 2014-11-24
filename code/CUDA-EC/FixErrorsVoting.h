@@ -18,6 +18,8 @@
 #define BLOCK 256
 #define THREAD 256
 
+#define WARPSIZE 32
+
 #define MAX_READS_BOUND BLOCK * THREAD  //65536 //131072 //65536
 
 #define	NAMESTR_LEN 60

@@ -113,7 +113,8 @@ extern "C" void runTest(unsigned char *hash_table,
 	//call kernel
 	printf( "Running Kernel with %d Block, %d Thread...\n",BLOCK,THREAD);
 
-	fix_errors1<<<Block_dim,Thread_dim>>>(d_reads_arr,d_param);
+  //Dynamic allocation of shared memory buffer
+	fix_errors1<<<Block_dim,Thread_dim,(h_param->readLen + 2)*THREAD>>>(d_reads_arr,d_param);
 		
   gpuErrchk( cudaPeekAtLastError() );
 		
