@@ -807,7 +807,9 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
 
   int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
   unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
-  int solid[READ_LENGTH];
+  __shared__ bool solid_shared[READ_LENGTH * THREAD];
+  bool* solid = &solid_shared[READ_LENGTH*threadIdx.x];
+
   int s,i,j,m,n,startPos, fixPos=-1,numFixed = 0,numChanges=0;	
   short return_value = 0,flag = 0,flag1=1;
 
