@@ -805,7 +805,8 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
   int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);	
   round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
 
-  int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
+  // int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
+  int maxPos[2],maxMod[2]; 
   unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
   int solid[READ_LENGTH];
   int s,i,j,m,n,startPos, fixPos=-1,numFixed = 0,numChanges=0;	
@@ -921,6 +922,11 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
                   maxMod[pindex] = m;
                   pindex++;
                 }
+		
+		if(pindex > 1) {
+		  p = len;
+		  m = 4;
+		}
               }
             }
 

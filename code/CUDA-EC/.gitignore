@@ -1,0 +1,8 @@
+CUDA-EC
+*.e*
+*.o*
+*.a
+*.o
+*.fixed
+*.discards
+common/obj/*
