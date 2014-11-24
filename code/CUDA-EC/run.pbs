@@ -1,0 +1,37 @@
+#PBS -q class
+#PBS -l nodes=1:m2090
+#PBS -l walltime=00:50:00
+#PBS -N CUDA-EC
+
+# Changes to the directory we were in when we
+# submit the job:
+
+cd $PBS_O_WORKDIR
+
+# Runs a bunch of standard command-line
+# utilities, just as an example:
+
+echo "Script began:" `date`
+echo "Node:" `hostname`
+echo "Current directory: ${PWD}"
+
+#Set these variables before run
+FILENAME=SRR1552370.fasta
+READLENGTH=36
+
+KMERSIZE=21
+ERRORPERREAD=1
+MINMULT=5
+
+echo "=== Running CUDA-EC for ${FILENAME}"
+echo "=== PARAMETERS Minmult:${MINMULT}  ,KmerSize:${KMERSIZE},  read size:-r ${READLENGTH},  Errorread: ${ERRORPERREAD}"
+
+for trial in 1 2 3 4 5 ; do
+  echo "*** Trial ${trial} ***"
+  ./CUDA-EC -f input/${FILENAME} -t ${KMERSIZE} -o output/${FILENAME}.fixed -d output/${FILENAME}.discards -r ${READLENGTH} -search ${ERRORPERREAD} -minMult ${MINMULT}
+  echo ""
+done
+
+echo "=== Done! ==="
+
+# eof
