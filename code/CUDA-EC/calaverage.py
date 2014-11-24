@@ -3,7 +3,9 @@
 import re
 import commands
 
-(a, filename) = commands.getstatusoutput("ls CUDA-EC.o*")
+(a, files) = commands.getstatusoutput("ls CUDA-EC.o*")
+filelist = files.split("\n")
+filename = filelist[-1]
 f = open(filename, 'r')
 text = f.read()
 
