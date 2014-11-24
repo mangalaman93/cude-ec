@@ -944,12 +944,12 @@ __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads)
   int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);  
   round = numReads/chunk_bound + (numReads%chunk_bound == 0 ? 0:1);
 
-  int maxPos[READ_LENGTH * 4];
-  int maxMod[READ_LENGTH * 4];
+  int maxPos[36 * 4];
+  int maxMod[36 * 4];
 
-  unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
+  unsigned char votes[36][4],mutNuc, mutNuc2, prev, cur;
 
-  int solid[READ_LENGTH];
+  int solid[36];
   //__shared__ unsigned char solid[READ_LENGTH];
 
   int s,i,j,m,n;
@@ -983,10 +983,10 @@ __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads)
     current_read_idx = (current_read_idx > numReads ? 0:current_read_idx); 
 
     //take 1 read per thread
-    read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
+    read = &d_reads_arr[current_read_idx*(d_param->readLen + 2)];
 
     //get length of this read
-    len = read[READ_LENGTH + 1];
+    len = read[d_param->readLen+ 1];
 
     discardSeq = 0;
 
@@ -1004,13 +1004,13 @@ __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads)
           else 
             startPos = 0;
 
-          for (m = 0; m < READ_LENGTH; m++) {
+          for (m = 0; m < d_param->readLen; m++) {
             for (int n = 0; n < 4; n++) 
               votes[m][n] = 0;
           }
 
 
-          for(m=0;m<READ_LENGTH;m++)
+          for(m=0;m<d_param->readLen;m++)
             solid[m] = 0;
 
           for (p = startPos; p < len - d_param->tupleSize + 1; p++ ) {
@@ -1203,10 +1203,10 @@ __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads)
     }    
 
     if (discardSeq) {
-      read[READ_LENGTH] = 'D'; //last char for indicator
+      read[d_param->readLen] = 'D'; //last char for indicator
     }
     else {
-      read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
+      read[d_param->readLen] = 'F'; //F fixed, D: not fixed, discard
     }
 
     __syncthreads(); 
