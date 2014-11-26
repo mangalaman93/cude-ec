@@ -789,6 +789,7 @@ __device__ int TrimSequence(char *seq, int tupleSize, int &seqStart, int &seqEnd
 Written by Aman Mangal, Chirag Jain on Nov 24, 2014
 Algorithm: 1 warp -> 1 read
 */
+/*
 __global__ void fix_errors1_warp(char *d_reads_arr, Param *d_param) {
   // calculating number of rounds
   int chunk_bound = MAX_READS_BOUND/WARPSIZE;
@@ -799,15 +800,287 @@ __global__ void fix_errors1_warp(char *d_reads_arr, Param *d_param) {
   // main loop (original rounds)*WARPSIZE times
   for(unsigned i=0; i<round; i++)
   {
-    // preparing voting matrix
-    if((tid & 31) == 0)
+    // read from global memory to shared memory
+
+    // access voting matrix
+
+    do
     {
-      // do stuff related to first thread in warp
-    } else {
-      // do stuff related to rest of the threads
+      // initialize voting matrix
+
+      // preparing voting matrix
+      if((tid & 31) == 0)
+      {
+        // do stuff related to first thread in warp
+      } else {
+        // do stuff related to rest of the threads
+      }
+
+      // do common stuff
+
+      // writing into voting matrix
+
+    } while(fixPos > 0)
+  }
+}
+*/
+
+
+////////////////////////////////////////////////////////////////////////////////
+//! Fix two errors, step 1 kernel function
+//! @param d_reads_arr  input data in global memory
+//! @param d_param  input data in global memory
+////////////////////////////////////////////////////////////////////////////////
+__global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
+{
+  short numSearch=1;
+  nextNuc['G'] = 'A'; nextNuc['A'] = 'C'; nextNuc['C'] = 'T'; nextNuc['T'] = 'G';
+
+  int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
+  int round = 0;
+
+  //# changing total number of threads
+  int total_thread = BLOCK * THREAD / WARPSIZE;
+  int discardSeq=0;
+  int trimStart=0, trimEnd=0;
+
+  int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);
+  round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
+
+  int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
+  unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
+  int solid[READ_LENGTH];
+  int s,i,j,m,n,startPos, fixPos=-1,numFixed = 0,numChanges=0;
+  short return_value = 0,flag = 0,flag1=1;
+
+  // Cast votes for mutations
+  int p,vp,mut;
+  short numAboveThreshold = 0,newLength,len;
+  short maxVotes = 0,allGood  = 1;
+  int numTies = -1,pindex = 0, mod, pos,current_read_idx;
+
+  //Access to shared memory
+  extern __shared__ char buffer[];
+
+  char *tempTuple, *read, *readsInOneRound_Warp = &buffer[(threadIdx.x/WARPSIZE)*WARPSIZE*(d_param->readLen + 2)];
+
+  for(i=0;i<round;i++)
+  {
+    flag = 0;flag1=1;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
+
+    current_read_idx = c_tid + chunk_bound * i;
+
+    //check if run out of reads
+    current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
+
+    //Place reads in the shared memory after every round
+    //Computing start offset for this warp
+    //Go till end offset for this warp
+    //Fill the shared buffer while coalescing global memory accesses
+    //Doing it at a warp level will remove the requirement of syncing threads
+    int startOffsetForThisWarp = ((threadIdx.x/WARPSIZE)*WARPSIZE + blockIdx.x*blockDim.x + chunk_bound * i)* (d_param->readLen + 2);
+    int endOffsetForThisWarp = min(\
+        ((threadIdx.x/WARPSIZE + 1)*WARPSIZE + blockIdx.x*blockDim.x + chunk_bound * i)* (d_param->readLen + 2),\
+        d_param->NUM_OF_READS * (d_param->readLen + 2));
+
+    for (int j= startOffsetForThisWarp; j< endOffsetForThisWarp; j += WARPSIZE)
+    {
+      if(j+threadIdx.x%WARPSIZE < endOffsetForThisWarp)
+        readsInOneRound_Warp[j-startOffsetForThisWarp + threadIdx.x%WARPSIZE] = d_reads_arr[j+threadIdx.x%WARPSIZE];
     }
 
-    // do common stuff
+    read = &readsInOneRound_Warp[(threadIdx.x % WARPSIZE) * (d_param->readLen + 2)];
+
+    //take 1 read per thread
+    //read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
+
+    // get length of this read
+    len = read[READ_LENGTH + 1];
+
+if ((c_tid & (WARPSIZE-1)) == 0)
+{
+    if (!PrepareSequence(read)) {
+      discardSeq = 1;
+    }
+    else
+    {
+      numFixed = 0; fixPos = -1;
+      do{
+        if(flag)
+          break;
+        else{
+          if (fixPos > 0)
+            startPos = fixPos;
+          else
+            startPos = 0;
+
+          for (m = 0; m < READ_LENGTH; m++) {
+            for (int n = 0; n < 4; n++)
+              //votes[threadIdx.x][m][n] = 0;
+              votes[m][n] = 0;
+          }
+
+          for(m=0;m<READ_LENGTH;m++)
+            solid[m] = 0;
+
+          for (p = startPos; p < len - d_param->tupleSize + 1; p++ ){
+            tempTuple = &read[p];
+            if (d_strTpl_Valid(tempTuple)){
+              if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                solid[p] = 1;
+              else{
+                for (vp = 0; vp < d_param->tupleSize; vp++){
+                  mutNuc = nextNuc[read[p + vp]];
+                  read[p + vp] = mutNuc;
+
+                  for (mut = 0; mut < 3; mut++ ){
+                    tempTuple = &read[p];
+
+                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                      votes[vp + p][unmasked_nuc_index[mutNuc]]++;
+
+                    mutNuc = nextNuc[mutNuc];
+                    read[p + vp] = mutNuc;
+                  }
+                }
+              }
+            }
+          }
+
+          ////////////////vote completed//////////////////////
+          ++numFixed;
+
+          //////////////////////fix sequence based on voting in previous step//////////////
+          fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
+
+          for (p = 0; p < len - d_param->tupleSize + 1; p++ ) {
+            if (solid[p] == 0) {
+              allGood = 0;break;
+            }
+          }
+
+          if (allGood)
+            // no need to fix this sequence
+            return_value =  1;
+          else
+          {
+            for (p = 0; p < len; p++){
+              for (m = 0; m < 4; m++){
+                if (votes[p][m] > d_param->minVotes)
+                  numAboveThreshold++;
+
+                if (votes[p][m] >= maxVotes)
+                  maxVotes = votes[p][m];
+              }
+            }
+
+            pindex = 0;numTies = -1;
+
+            // Make sure there aren't multiple possible fixes
+            for (p = 0; p < len; p++){
+              for (m = 0; m < 4; m++){
+                if (votes[p][m] == maxVotes){
+                  numTies++;
+                  maxPos[pindex] = p;
+                  maxMod[pindex] = m;
+                  pindex++;
+                }
+              }
+            }
+
+            if (numAboveThreshold > 0 ){
+              if (numTies < numSearch || (pindex > 1 && maxPos[0] != maxPos[1])){
+                // Found at least one change to the sequence
+                for (s = 0; s < numSearch && s < pindex; s++) {
+                  mod = maxMod[s];
+                  pos = maxPos[s];
+                  fixPos = pos;
+
+                  if (mod < 4){
+                    prev = read[pos];
+                    cur = nuc_char[mod];
+                    read[pos] = cur;
+                  }
+                }
+                if( CheckSolid(read,d_param->tupleSize,d_param->numTuples))
+                  return_value = 1;
+                else{
+                  //reset
+                  return_value = 0;
+                  //read[pos] = prev;
+                }
+              }
+              else
+              {
+                return_value = 0;
+              }
+            }
+            else
+            {
+              return_value = 0;
+            }
+          }
+
+
+          //check fix sequence return
+          if( return_value)
+          {
+            flag = 1;
+            numChanges = numFixed;
+            break;
+          }
+        }
+      } while (fixPos > 0);
+
+      /////////////////////////end of solidify////////
+
+      if (numChanges != 0){
+        if (numChanges > d_param->maxMods)
+          discardSeq = 1;
+        else
+          discardSeq = 0;
+      }
+      else{
+        if( d_param->numSearch == 2){
+          //removed trim in fix error1
+          discardSeq = 1;
+        }
+        else
+        {
+          // Find the locations of the first solid positions.
+          if (d_param->doTrim)
+          {
+            if(TrimSequence(read, d_param->tupleSize,trimStart, trimEnd, d_param->numTuples,d_param->maxTrim)){
+              // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
+              // and the subsequence between the trimmed ends is ok, print the
+              // trimmed coordinates.
+              discardSeq = 0;
+            }
+            else
+              discardSeq = 1;
+          }
+          else
+            discardSeq = 1;
+        }
+      }
+    }
+
+    if (discardSeq) {
+      read[READ_LENGTH] = 'D'; //F fixed, D: not fixed, discard
+    }
+    else {
+      read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
+    }
+
+    //Save back results to global memory
+    for (int j= startOffsetForThisWarp; j< endOffsetForThisWarp; j += WARPSIZE)
+    {
+      if(j+threadIdx.x%WARPSIZE < endOffsetForThisWarp)
+        d_reads_arr[j+threadIdx.x%WARPSIZE] = readsInOneRound_Warp[j-startOffsetForThisWarp + threadIdx.x%WARPSIZE];
+    }
+}
+
+    __syncthreads();
   }
 }
 
