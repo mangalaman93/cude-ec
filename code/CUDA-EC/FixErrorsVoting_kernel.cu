@@ -869,6 +869,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     flag = 0;flag1=1;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
 
     current_read_idx = c_tid/WARPSIZE + chunk_bound * i;
+    int w_tid = threadIdx.x & (WARPSIZE - 1);
 
     //check if run out of reads
     current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
@@ -916,12 +917,12 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
           //# parallelizing this loop
           for(m=0; m<READ_LENGTH; m+=WARPSIZE)
           {
-            if(m+(threadIdx.x & (WARPSIZE-1)) < READ_LENGTH)
+            if(m+w_tid < READ_LENGTH)
             {
-              solid[m] = 0;
+              solid[m+w_tid] = 0;
               for (int n = 0; n < 4; n++)
               {
-                votes[m][n] = 0;
+                votes[m + w_tid][n] = 0;
               }
             }
           }
@@ -943,19 +944,19 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
               else{
                 for (vp = 0; vp < d_param->tupleSize; vp+=WARPSIZE){
                   //#
-                  if(vp + (threadIdx.x & (WARPSIZE-1)) < d_param->tupleSize)
+                  if(vp + w_tid < d_param->tupleSize)
                   {
-                    mutNuc = nextNuc[read[p + vp]];
-                    read[p + vp] = mutNuc;
+                    mutNuc = nextNuc[read[p + vp + w_tid]];
+                    read[p + vp + w_tid] = mutNuc;
 
                     for (mut = 0; mut < 3; mut++ ){
                       tempTuple = &read[p];
 
                       if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
-                        votes[vp + p][unmasked_nuc_index[mutNuc]]++;
+                        votes[vp + p + w_tid][unmasked_nuc_index[mutNuc]]++;
 
                       mutNuc = nextNuc[mutNuc];
-                      read[p + vp] = mutNuc;
+                      read[p + vp + w_tid] = mutNuc;
                     }
                   }
                 }
@@ -963,7 +964,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
             }
           }
 
-if ((c_tid & (WARPSIZE-1)) == 0)
+if (w_tid == 0)
 {
 
           ////////////////vote completed//////////////////////
