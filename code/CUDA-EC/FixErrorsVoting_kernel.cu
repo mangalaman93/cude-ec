@@ -65,6 +65,9 @@ __constant__ unsigned char _bit_mask_[8] = {
 
 __device__ char nextNuc[256];
 
+__device__ unsigned long long solidInitialKmerCount=0;
+__device__ unsigned long long weakInitialKmerCount=0;
+__device__ unsigned long long totalNumChanges=0;
 
 __constant__ char unmasked_nuc[256] = {0, 1, 2, 3, 'N', 'R', 'Y', 'W', 'S', 'M',     // 9	
   'K', 'H', 'B', 'V', 'D', 'X', '\0','\0','\0','\0',    // 19	
@@ -885,8 +888,12 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
             tempTuple = &read[p];
             if (d_strTpl_Valid(tempTuple)){
               if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1) 
+              {
                 solid[p] = 1;							
+                atomicAdd(&solidInitialKmerCount, 1);
+              }
               else{								
+                atomicAdd(&weakInitialKmerCount,1);
                 for (vp = 0; vp < d_param->tupleSize; vp++){										
                   mutNuc = nextNuc[read[p + vp]];									
                   read[p + vp] = mutNuc;
@@ -907,6 +914,7 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
 
           ////////////////vote completed//////////////////////						
           ++numFixed;	
+          atomicAdd(&totalNumChanges, 1);
 
           //////////////////////fix sequence based on voting in previous step//////////////
           fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;

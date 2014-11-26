@@ -115,6 +115,13 @@ extern "C" void runTest(unsigned char *hash_table,
 
   //Dynamic allocation of shared memory buffer
 	fix_errors1<<<Block_dim,Thread_dim,(h_param->readLen + 2)*THREAD>>>(d_reads_arr,d_param);
+
+  unsigned long long numChanges, weak, solid;
+  cudaMemcpyFromSymbol((void*)&numChanges, (const char*)&totalNumChanges, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
+  cudaMemcpyFromSymbol((void*)&weak, (const char*)&weakInitialKmerCount, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
+  cudaMemcpyFromSymbol((void*)&solid, (const char*)&solidInitialKmerCount, sizeof(unsigned long long), 0, cudaMemcpyDeviceToHost);
+  printf("weak:%lu, solid:%lu\n", weakInitialKmerCount, solidInitialKmerCount);
+  printf("numChanges : %lu \n", numChanges);
 		
   gpuErrchk( cudaPeekAtLastError() );
 		
