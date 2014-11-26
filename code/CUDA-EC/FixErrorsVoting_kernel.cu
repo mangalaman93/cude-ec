@@ -969,16 +969,30 @@ if (w_tid == 0)
 
           ////////////////vote completed//////////////////////
           ++numFixed;
-
+}
           //////////////////////fix sequence based on voting in previous step//////////////
           fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
 
-          for (p = 0; p < len - d_param->tupleSize + 1; p++ ) {
+	  //#
+ 	  for (p = 0; p < len - d_param->tupleSize + 1; p+=WARPSIZE)
+	  {
+	    if(__any(solid[p+w_tid]==0))
+	    {
+	      allGood = 0;
+	      break;
+	    }
+	  }
+
+          /*
+	  for (p = 0; p < len - d_param->tupleSize + 1; p++ ) {
             if (solid[p] == 0) {
               allGood = 0;break;
             }
           }
+	  */
 
+if (w_tid == 0)
+{
           if (allGood)
             // no need to fix this sequence
             return_value =  1;
@@ -1043,7 +1057,7 @@ if (w_tid == 0)
 
 
           //check fix sequence return
-          if( return_value)
+          if( __any(return_value))
           {
             flag = 1;
             numChanges = numFixed;
