@@ -48,7 +48,7 @@
 #include "FixErrorsVoting.h"
 
 texture<unsigned char,1, cudaReadModeElementType> tex;
-
+#define votes_2d(m,n) votes[(m)*4+(n)]
 
 __constant__ unsigned int _char_size_ = 0x08;    // 8 bits in 1 char(unsigned)
 
@@ -848,8 +848,16 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
 
   int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
-  unsigned char votes[READ_LENGTH][4],mutNuc, mutNuc2, prev, cur;
-  int solid[READ_LENGTH];
+  
+  // unsigned char votes[READ_LENGTH][4];
+  unsigned char mutNuc, mutNuc2, prev, cur;
+  __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
+  unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
+  
+  // int solid[READ_LENGTH];
+  __shared__ bool solid_shared[READ_LENGTH*WARPS_BLOCK];
+  bool *solid = &solid_shared[READ_LENGTH * (threadIdx.x/WARPSIZE)];
+  
   int s,i,j,m,n,startPos, fixPos=-1,numFixed = 0,numChanges=0;
   short return_value = 0,flag = 0,flag1=1;
 
@@ -918,7 +926,7 @@ if ((c_tid & (WARPSIZE-1)) == 0)
           for (m = 0; m < READ_LENGTH; m++) {
             for (int n = 0; n < 4; n++)
               //votes[threadIdx.x][m][n] = 0;
-              votes[m][n] = 0;
+              votes_2d(m,n) = 0;
           }
 
           for(m=0;m<READ_LENGTH;m++)
@@ -938,7 +946,7 @@ if ((c_tid & (WARPSIZE-1)) == 0)
                     tempTuple = &read[p];
 
                     if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
-                      votes[vp + p][unmasked_nuc_index[mutNuc]]++;
+                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
                     mutNuc = nextNuc[mutNuc];
                     read[p + vp] = mutNuc;
@@ -967,11 +975,11 @@ if ((c_tid & (WARPSIZE-1)) == 0)
           {
             for (p = 0; p < len; p++){
               for (m = 0; m < 4; m++){
-                if (votes[p][m] > d_param->minVotes)
+                if (votes_2d(p,m) > d_param->minVotes)
                   numAboveThreshold++;
 
-                if (votes[p][m] >= maxVotes)
-                  maxVotes = votes[p][m];
+                if (votes_2d(p,m) >= maxVotes)
+                  maxVotes = votes_2d(p,m);
               }
             }
 
@@ -980,7 +988,7 @@ if ((c_tid & (WARPSIZE-1)) == 0)
             // Make sure there aren't multiple possible fixes
             for (p = 0; p < len; p++){
               for (m = 0; m < 4; m++){
-                if (votes[p][m] == maxVotes){
+                if (votes_2d(p,m) == maxVotes){
                   numTies++;
                   maxPos[pindex] = p;
                   maxMod[pindex] = m;
