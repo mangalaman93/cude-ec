@@ -898,12 +898,10 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     // get length of this read
     len = read[READ_LENGTH + 1];
 
-if ((c_tid & (WARPSIZE-1)) == 0)
-{
+//# TODO: parallelize this function
     if (!PrepareSequence(read)) {
       discardSeq = 1;
-    }
-    else
+    } else
     {
       numFixed = 0; fixPos = -1;
       do{
@@ -915,14 +913,27 @@ if ((c_tid & (WARPSIZE-1)) == 0)
           else
             startPos = 0;
 
-          for (m = 0; m < READ_LENGTH; m++) {
-            for (int n = 0; n < 4; n++)
-              //votes[threadIdx.x][m][n] = 0;
-              votes[m][n] = 0;
+          //# parallelizing this loop
+          for(m=0; m<READ_LENGTH; m+=WARPSIZE)
+          {
+            if(m+(threadIdx.x & (WARPSIZE-1)) < READ_LENGTH)
+            {
+              solid[m] = 0;
+              for (int n = 0; n < 4; n++)
+              {
+                votes[m][n] = 0;
+              }
+            }
           }
 
-          for(m=0;m<READ_LENGTH;m++)
-            solid[m] = 0;
+          // for (m = 0; m < READ_LENGTH; m++) {
+          //   for (int n = 0; n < 4; n++)
+          //     //votes[threadIdx.x][m][n] = 0;
+          //     votes[m][n] = 0;
+          // }
+
+          // for(m=0;m<READ_LENGTH;m++)
+          //   solid[m] = 0;
 
           for (p = startPos; p < len - d_param->tupleSize + 1; p++ ){
             tempTuple = &read[p];
@@ -930,23 +941,30 @@ if ((c_tid & (WARPSIZE-1)) == 0)
               if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
                 solid[p] = 1;
               else{
-                for (vp = 0; vp < d_param->tupleSize; vp++){
-                  mutNuc = nextNuc[read[p + vp]];
-                  read[p + vp] = mutNuc;
-
-                  for (mut = 0; mut < 3; mut++ ){
-                    tempTuple = &read[p];
-
-                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
-                      votes[vp + p][unmasked_nuc_index[mutNuc]]++;
-
-                    mutNuc = nextNuc[mutNuc];
+                for (vp = 0; vp < d_param->tupleSize; vp+=WARPSIZE){
+                  //#
+                  if(vp + (threadIdx.x & (WARPSIZE-1)) < d_param->tupleSize)
+                  {
+                    mutNuc = nextNuc[read[p + vp]];
                     read[p + vp] = mutNuc;
+
+                    for (mut = 0; mut < 3; mut++ ){
+                      tempTuple = &read[p];
+
+                      if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                        votes[vp + p][unmasked_nuc_index[mutNuc]]++;
+
+                      mutNuc = nextNuc[mutNuc];
+                      read[p + vp] = mutNuc;
+                    }
                   }
                 }
               }
             }
           }
+
+if ((c_tid & (WARPSIZE-1)) == 0)
+{
 
           ////////////////vote completed//////////////////////
           ++numFixed;
@@ -1030,6 +1048,7 @@ if ((c_tid & (WARPSIZE-1)) == 0)
             numChanges = numFixed;
             break;
           }
+}
         }
       } while (fixPos > 0);
 
@@ -1079,7 +1098,6 @@ if ((c_tid & (WARPSIZE-1)) == 0)
     //  if(j+threadIdx.x%WARPSIZE < endOffsetForThisWarp)
     //    d_reads_arr[j+threadIdx.x%WARPSIZE] = readsInOneRound_Warp[j-startOffsetForThisWarp + threadIdx.x%WARPSIZE];
     //}
-}
 
     __syncthreads();
   }
