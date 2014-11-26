@@ -1,0 +1,28 @@
+Adding user cjain7 to group authjobs
+Script began: Tue Nov 25 23:26:12 EST 2014
+Node: jinx13
+Current directory: /nethome/cjain7/CSE6230/cse6230-project/code/CUDA-EC
+=== Running CUDA-EC for SRR006331.fasta
+=== PARAMETERS Minmult:5  ,KmerSize:21,  read size:-r 36,  Errorread: 1
+Running.... in main....readLen: 36, numSearch: 1
+Reading sequence from fasta file...Read seq done....NUM_READS: 1693847 
+Alloc bloom1 memory done..., 516 MB allocated
+Total 2376929 past threshhold (minMult = 5) 
+The run time for buliding bloom filter is: 76.420000 secs.
+arr_size 64366186 
+Malloc reads array memory finished (61 MB) 
+Alloc Param done....
+Bind texture done..
+Allocate memory on device done...
+Copy from CPU to GPU done...
+Running Kernel with 256 Block, 256 Thread...
+weak:7490688, solid:18817232
+numChanges : 1809396 
+GPU pure time: 3358.194092 msec
+Copy from GPU to CPU done...
+...releasing GPU memory.
+The run time for fixing error in GPU is: 5.440000 secs.
+Write output to file....
+...releasing CPU memory.
+=== Done! ===
+Removing user cjain7 from group authjobs
