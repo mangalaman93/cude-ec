@@ -891,16 +891,35 @@ if (w_tid == 0)
             startPos = fixPos;
           else
             startPos = 0;
+}
 
+          //# parallelizing this loop
+          // for(m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
+          // {
+          //       votes[m*4+0] = 0;
+          //       votes[m*4+1] = 0;
+          //       votes[m*4+2] = 0;
+          //       votes[m*4+3] = 0;
+          // }
+
+          for(m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
+          {
+              solid[m] = 0;
+          }
+if(w_tid==0)
+{
           for (m = 0; m < READ_LENGTH; m++) {
             for (int n = 0; n < 4; n++)
               //votes[threadIdx.x][m][n] = 0;
               votes_2d(m,n) = 0;
           }
 
-          for(m=0;m<READ_LENGTH;m++)
-            solid[m] = 0;
+          // for(m=0;m<READ_LENGTH;m++)
+          //   solid[m] = 0;
+}
 
+if (w_tid == 0)
+{
           for (p = startPos; p < len - d_param->tupleSize + 1; p++ ){
             tempTuple = &read[p];
             if (d_strTpl_Valid(tempTuple)){
