@@ -789,42 +789,6 @@ __device__ int TrimSequence(char *seq, int tupleSize, int &seqStart, int &seqEnd
 Written by Aman Mangal, Chirag Jain on Nov 24, 2014
 Algorithm: 1 warp -> 1 read
 */
-/*
-__global__ void fix_errors1_warp(char *d_reads_arr, Param *d_param) {
-  // calculating number of rounds
-  int chunk_bound = MAX_READS_BOUND/WARPSIZE;
-  int round = (d_param->NUM_OF_READS + chunk_bound - 1)/chunk_bound;
-
-  int tid = blockIdx.x*blockDim.x + threadIdx.x;
-
-  // main loop (original rounds)*WARPSIZE times
-  for(unsigned i=0; i<round; i++)
-  {
-    // read from global memory to shared memory
-
-    // access voting matrix
-
-    do
-    {
-      // initialize voting matrix
-
-      // preparing voting matrix
-      if((tid & 31) == 0)
-      {
-        // do stuff related to first thread in warp
-      } else {
-        // do stuff related to rest of the threads
-      }
-
-      // do common stuff
-
-      // writing into voting matrix
-
-    } while(fixPos > 0)
-  }
-}
-*/
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Fix two errors, step 1 kernel function
@@ -837,6 +801,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   nextNuc['G'] = 'A'; nextNuc['A'] = 'C'; nextNuc['C'] = 'T'; nextNuc['T'] = 'G';
 
   int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
+  int w_tid = threadIdx.x & (WARPSIZE - 1);
   int round = 0;
 
   //# changing total number of threads
@@ -906,18 +871,22 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     // get length of this read
     len = read[READ_LENGTH + 1];
 
-if ((c_tid & (WARPSIZE-1)) == 0)
-{
     if (!PrepareSequence(read)) {
+if (w_tid == 0)
       discardSeq = 1;
     }
     else
     {
+if (w_tid == 0)
+{
       numFixed = 0; fixPos = -1;
+}
       do{
-        if(flag)
+        if(__any(flag))
           break;
         else{
+if (w_tid == 0)
+{
           if (fixPos > 0)
             startPos = fixPos;
           else
@@ -1039,10 +1008,13 @@ if ((c_tid & (WARPSIZE-1)) == 0)
             break;
           }
         }
+}
       } while (fixPos > 0);
 
       /////////////////////////end of solidify////////
 
+if (w_tid == 0)
+{
       if (numChanges != 0){
         if (numChanges > d_param->maxMods)
           discardSeq = 1;
@@ -1072,22 +1044,24 @@ if ((c_tid & (WARPSIZE-1)) == 0)
             discardSeq = 1;
         }
       }
+}
     }
 
+if (w_tid == 0)
+{
     if (discardSeq) {
       read[READ_LENGTH] = 'D'; //F fixed, D: not fixed, discard
     }
     else {
       read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
     }
-
+}
     ////Save back results to global memory
     //for (int j= startOffsetForThisWarp; j< endOffsetForThisWarp; j += WARPSIZE)
     //{
     //  if(j+threadIdx.x%WARPSIZE < endOffsetForThisWarp)
     //    d_reads_arr[j+threadIdx.x%WARPSIZE] = readsInOneRound_Warp[j-startOffsetForThisWarp + threadIdx.x%WARPSIZE];
     //}
-}
 
     __syncthreads();
   }
