@@ -922,8 +922,6 @@ if (w_tid == 0)
           // for(m=0;m<READ_LENGTH;m++)
           //   solid[m] = 0;
 
-if (w_tid == 0)
-{
           char str[READ_LENGTH];
           _strncpy_(str, read, READ_LENGTH);
           for (p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ ){
@@ -932,7 +930,7 @@ if (w_tid == 0)
               if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
                 solid[p] = 1;
               else{
-                for (vp = 0; vp < d_param->tupleSize; vp++){
+                for (vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE){
                   mutNuc = nextNuc[tempTuple[vp]];
                   tempTuple[vp] = mutNuc;
 
@@ -948,7 +946,8 @@ if (w_tid == 0)
               }
             }
           }
-
+if (w_tid==0)
+{
           ////////////////vote completed//////////////////////
           ++numFixed;
 
