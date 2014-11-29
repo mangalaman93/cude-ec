@@ -804,6 +804,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
   int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
   int w_tid = threadIdx.x & (WARPSIZE - 1);
+  int w_id = threadIdx.x >> 5;
   int round = 0;
 
   //# changing total number of threads
@@ -824,8 +825,12 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   // int solid[READ_LENGTH];
   __shared__ bool solid_shared[READ_LENGTH*WARPS_BLOCK];
   bool *solid = &solid_shared[READ_LENGTH * (threadIdx.x/WARPSIZE)];
+
+  //startPos
+  __shared__ int startPos[WARPS_BLOCK];
+
   
-  int s,i,j,m,n,startPos, fixPos=-1,numFixed = 0,numChanges=0;
+  int s,i,j,m,n/*,startPos*/, fixPos=-1,numFixed = 0,numChanges=0;
   short return_value = 0,flag = 0,flag1=1;
 
   // Cast votes for mutations
@@ -890,9 +895,9 @@ if (w_tid == 0)
 if (w_tid == 0)
 {
           if (fixPos > 0)
-            startPos = fixPos;
+            startPos[w_id] = fixPos;
           else
-            startPos = 0;
+            startPos[w_id] = 0;
 }
 
           //# parallelizing this loop
@@ -919,24 +924,25 @@ if (w_tid == 0)
 
 if (w_tid == 0)
 {
-          for (p = startPos; p < len - d_param->tupleSize + 1; p++ ){
-            tempTuple = &read[p];
+          char str[READ_LENGTH];
+          _strncpy_(str, read, READ_LENGTH);
+          for (p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ ){
+            tempTuple = &str[p];
             if (d_strTpl_Valid(tempTuple)){
               if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
                 solid[p] = 1;
               else{
                 for (vp = 0; vp < d_param->tupleSize; vp++){
-                  mutNuc = nextNuc[read[p + vp]];
-                  read[p + vp] = mutNuc;
+                  mutNuc = nextNuc[tempTuple[vp]];
+                  tempTuple[vp] = mutNuc;
 
                   for (mut = 0; mut < 3; mut++ ){
-                    tempTuple = &read[p];
 
                     if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
                       votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
                     mutNuc = nextNuc[mutNuc];
-                    read[p + vp] = mutNuc;
+                    tempTuple[vp] = mutNuc;
                   }
                 }
               }
@@ -1097,6 +1103,7 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
   nextNuc['G'] = 'A';	nextNuc['A'] = 'C';	nextNuc['C'] = 'T';	nextNuc['T'] = 'G';
 
   int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
+  int wid = threadIdx.x >> 5;
   int round = 0;
   int total_thread = BLOCK * THREAD;
   int discardSeq=0;
