@@ -25,3 +25,6 @@ clean:
 	rm -f $(EXECUTABLE)
 	rm -f *.o
 	make clean -C ./common
+
+check:
+	diff output/SRR006331.fasta.fixed output/SRR006331.fasta.fixed.master

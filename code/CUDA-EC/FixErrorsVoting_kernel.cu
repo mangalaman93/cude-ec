@@ -894,16 +894,13 @@ if (w_tid == 0)
 }
 
           //# parallelizing this loop
-if(w_tid==1)
-{
-          for(m=w_tid; m<READ_LENGTH; m++)//=WARPSIZE)
+          for(m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
           {
                 votes[m*4+0] = 0;
                 votes[m*4+1] = 0;
                 votes[m*4+2] = 0;
                 votes[m*4+3] = 0;
           }
-}
           for(m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
           {
               solid[m] = 0;
@@ -1028,7 +1025,7 @@ if (w_tid == 0)
           }
         }
 }
-      } while (fixPos > 0);
+      } while (__any(fixPos > 0));
 
       /////////////////////////end of solidify////////
 
