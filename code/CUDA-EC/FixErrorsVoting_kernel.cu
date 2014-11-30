@@ -933,14 +933,28 @@ if (w_tid == 0)
                   mutNuc = nextNuc[tempTuple[vp]];
                   tempTuple[vp] = mutNuc;
 
-                  for (unsigned mut = 0; mut < 3; mut++ ){
+                  //for (unsigned mut = 0; mut < 3; mut++ ){
 
                     if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
                       votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
                     mutNuc = nextNuc[mutNuc];
                     tempTuple[vp] = mutNuc;
-                  }
+
+                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+
+                    mutNuc = nextNuc[mutNuc];
+                    tempTuple[vp] = mutNuc;
+
+                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+
+                    mutNuc = nextNuc[mutNuc];
+                    tempTuple[vp] = mutNuc;
+ 
+ 
+                  //}
                 }
               }
             }
