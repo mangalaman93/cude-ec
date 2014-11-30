@@ -1087,7 +1087,7 @@ if (w_tid == 0)
         d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
     }
 
-    __syncthreads();
+    //__syncthreads();
   }
 }
 
