@@ -1,6 +1,6 @@
 #PBS -q class
 #PBS -l nodes=1:m2090
-#PBS -l walltime=00:50:00
+#PBS -l walltime=00:10:00
 #PBS -N CUDA-EC
 
 # Changes to the directory we were in when we

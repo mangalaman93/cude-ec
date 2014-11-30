@@ -842,35 +842,36 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   //Access to shared memory
   extern __shared__ char buffer[];
 
-  char *tempTuple, *read, *readsInOneRound_Warp = &buffer[(threadIdx.x/WARPSIZE)*WARPSIZE*(d_param->readLen + 2)];
+  char *tempTuple, *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
 
   for(i=0;i<round;i++)
   {
     flag = 0;flag1=1;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
 
-    current_read_idx = c_tid/WARPSIZE + chunk_bound * i;
+    //current_read_idx = c_tid/WARPSIZE + chunk_bound * i;
 
     //check if run out of reads
-    current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
+    //current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
 
     //Place reads in the shared memory after every round
     //Computing start offset for this warp
     //Go till end offset for this warp
     //Fill the shared buffer while coalescing global memory accesses
     //Doing it at a warp level will remove the requirement of syncing threads
-    //int startOffsetForThisWarp = ((threadIdx.x/WARPSIZE)*WARPSIZE + blockIdx.x*blockDim.x + chunk_bound * i)* (d_param->readLen + 2);
-    //int endOffsetForThisWarp = min(\
-    //    ((threadIdx.x/WARPSIZE + 1)*WARPSIZE + blockIdx.x*blockDim.x + chunk_bound * i)* (d_param->readLen + 2),\
-    //    d_param->NUM_OF_READS * (d_param->readLen + 2));
+    int startOffsetForThisWarp = ((w_id) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2);
+    int endOffsetForThisWarp = min(\
+          ((w_id + 1) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2),\
+          d_param->NUM_OF_READS * (d_param->readLen + 2));
 
-    //for (int j= startOffsetForThisWarp; j< endOffsetForThisWarp; j += WARPSIZE)
-    //{
-    //  if(j+threadIdx.x%WARPSIZE < endOffsetForThisWarp)
-    //    readsInOneRound_Warp[j-startOffsetForThisWarp + threadIdx.x%WARPSIZE] = d_reads_arr[j+threadIdx.x%WARPSIZE];
-    //}
+    for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
+    {
+      if(j  < endOffsetForThisWarp)
+        readsInOneRound_Warp[j-startOffsetForThisWarp] = d_reads_arr[j];
+    }
 
+    read = readsInOneRound_Warp;
     //read = &readsInOneRound_Warp[(threadIdx.x % WARPSIZE) * (d_param->readLen + 2)];
-    read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
+    //read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
 
     //take 1 read per thread
     //read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
@@ -1083,12 +1084,12 @@ if (w_tid == 0)
       read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
     }
 }
-    ////Save back results to global memory
-    //for (int j= startOffsetForThisWarp; j< endOffsetForThisWarp; j += WARPSIZE)
-    //{
-    //  if(j+threadIdx.x%WARPSIZE < endOffsetForThisWarp)
-    //    d_reads_arr[j+threadIdx.x%WARPSIZE] = readsInOneRound_Warp[j-startOffsetForThisWarp + threadIdx.x%WARPSIZE];
-    //}
+    //Save back results to global memory
+    for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
+    {
+      if(j  < endOffsetForThisWarp)
+        d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
+    }
 
     __syncthreads();
   }

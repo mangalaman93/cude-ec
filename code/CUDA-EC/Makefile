@@ -27,4 +27,4 @@ clean:
 	make clean -C ./common
 
 check:
-	diff output/SRR006331.fasta.fixed output/SRR006331.fasta.fixed.master
+	diff output/SRR006331.fasta.fixed output/SRR006331.fasta.fixed.master | wc -l 
