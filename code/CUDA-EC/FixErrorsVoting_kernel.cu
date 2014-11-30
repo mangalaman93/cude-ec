@@ -802,7 +802,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   short numSearch=1;
   nextNuc['G'] = 'A'; nextNuc['A'] = 'C'; nextNuc['C'] = 'T'; nextNuc['T'] = 'G';
 
-  int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
+  // int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
   int w_tid = threadIdx.x & (WARPSIZE - 1);
   int w_id = threadIdx.x >> 5;
   int round = 0;
@@ -818,7 +818,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   int maxPos[2],maxMod[2];
   
   // unsigned char votes[READ_LENGTH][4];
-  unsigned char mutNuc, mutNuc2, prev, cur;
+  unsigned char mutNuc, cur;
   __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
   unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
   
@@ -828,25 +828,23 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
   //startPos
   __shared__ int startPos[WARPS_BLOCK];
-
   
-  int s,i,j,m,n/*,startPos*/, fixPos=-1,numFixed = 0,numChanges=0;
-  short return_value = 0,flag = 0,flag1=1;
+  int fixPos=-1,numFixed = 0,numChanges=0;
+  short return_value = 0,flag = 0;
 
   // Cast votes for mutations
-  int p,vp,mut;
-  short numAboveThreshold = 0,newLength,len;
+  short numAboveThreshold = 0,len;
   short maxVotes = 0,allGood  = 1;
-  int numTies = -1,pindex = 0, mod, pos,current_read_idx;
+  int numTies = -1,pindex = 0, mod, pos;
 
   //Access to shared memory
   extern __shared__ char buffer[];
 
   char *tempTuple, *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
 
-  for(i=0;i<round;i++)
+  for(unsigned i=0;i<round;i++)
   {
-    flag = 0;flag1=1;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
+    flag = 0;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
 
     //current_read_idx = c_tid/WARPSIZE + chunk_bound * i;
 
@@ -902,14 +900,14 @@ if (w_tid == 0)
 }
 
           //# parallelizing this loop
-          for(m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
+          for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
           {
                 votes[m*4+0] = 0;
                 votes[m*4+1] = 0;
                 votes[m*4+2] = 0;
                 votes[m*4+3] = 0;
           }
-          for(m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
+          for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
           {
               solid[m] = 0;
           }
@@ -925,17 +923,17 @@ if (w_tid == 0)
 
           char str[READ_LENGTH];
           _strncpy_(str, read, READ_LENGTH);
-          for (p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ ){
+          for (unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ ){
             tempTuple = &str[p];
             if (d_strTpl_Valid(tempTuple)){
               if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
                 solid[p] = 1;
               else{
-                for (vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE){
+                for (unsigned vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE){
                   mutNuc = nextNuc[tempTuple[vp]];
                   tempTuple[vp] = mutNuc;
 
-                  for (mut = 0; mut < 3; mut++ ){
+                  for (unsigned mut = 0; mut < 3; mut++ ){
 
                     if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
                       votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
@@ -955,7 +953,7 @@ if (w_tid==0)
           //////////////////////fix sequence based on voting in previous step//////////////
           fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
 
-          for (p = 0; p < len - d_param->tupleSize + 1; p++ ) {
+          for (unsigned  p = 0; p < len - d_param->tupleSize + 1; p++ ) {
             if (solid[p] == 0) {
               allGood = 0;break;
             }
@@ -966,8 +964,8 @@ if (w_tid==0)
             return_value =  1;
           else
           {
-            for (p = 0; p < len; p++){
-              for (m = 0; m < 4; m++){
+            for (unsigned p = 0; p < len; p++){
+              for (unsigned m = 0; m < 4; m++){
                 if (votes_2d(p,m) > d_param->minVotes)
                   numAboveThreshold++;
 
@@ -979,8 +977,8 @@ if (w_tid==0)
             pindex = 0;numTies = -1;
 
             // Make sure there aren't multiple possible fixes
-            for (p = 0; p < len; p++){
-              for (m = 0; m < 4; m++){
+            for (unsigned p = 0; p < len; p++){
+              for (unsigned m = 0; m < 4; m++){
                 if (votes_2d(p,m) == maxVotes){
                   numTies++;
                   maxPos[pindex] = p;
@@ -997,13 +995,12 @@ if (w_tid==0)
             if (numAboveThreshold > 0 ){
               if (numTies < numSearch || (pindex > 1 && maxPos[0] != maxPos[1])){
                 // Found at least one change to the sequence
-                for (s = 0; s < numSearch && s < pindex; s++) {
+                for (unsigned s = 0; s < numSearch && s < pindex; s++) {
                   mod = maxMod[s];
                   pos = maxPos[s];
                   fixPos = pos;
 
                   if (mod < 4){
-                    prev = read[pos];
                     cur = nuc_char[mod];
                     read[pos] = cur;
                   }
@@ -1013,7 +1010,6 @@ if (w_tid==0)
                 else{
                   //reset
                   return_value = 0;
-                  //read[pos] = prev;
                 }
               }
               else
