@@ -815,7 +815,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);
   round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
 
-  int maxPos[READ_LENGTH * 4],maxMod[READ_LENGTH * 4];
+  int maxPos[2],maxMod[2];
   
   // unsigned char votes[READ_LENGTH][4];
   unsigned char mutNuc, mutNuc2, prev, cur;
@@ -985,6 +985,10 @@ if (w_tid==0)
                   maxPos[pindex] = p;
                   maxMod[pindex] = m;
                   pindex++;
+		  if (pindex > 1) {
+		    m = 4;
+		    p = len;
+		  }
                 }
               }
             }
