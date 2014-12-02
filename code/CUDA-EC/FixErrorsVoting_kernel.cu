@@ -663,15 +663,15 @@ __device__ int d_strTpl_Valid(char *st)
 //all the string tuple list
 __device__ int CheckSolid(char *seq, int tupleSize, int numTuples){
   int p;
-  char tuple[TUPLE_SIZE+1];
+  //char tuple[TUPLE_SIZE+1];
 
   int return_value = 1;
 
   for (p = 0; p < READ_LENGTH - tupleSize +1; p++ ){
-    _strncpy_(tuple, (char*) &seq[p],tupleSize);
-    tuple[tupleSize] = 0;
+    //_strncpy_(tuple, (char*) &seq[p],tupleSize);
+    //tuple[tupleSize] = 0;
 
-    if (lstspct_FindTuple(tuple,numTuples) == -1) {
+    if (lstspct_FindTuple(seq+p, numTuples)==-1) { // tuple,numTuples) == -1) {
       return_value = 0;
       break;
     }
