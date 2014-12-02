@@ -792,6 +792,161 @@ Written by Aman Mangal, Chirag Jain on Nov 24, 2014
 Algorithm: 1 warp -> 1 read
 */
 
+/********* BEGIN CONTAINS_WITHOUT_COPY ****************/
+__device__ int lstspct_FindTuple_With_Copy(char* tuple, int numTuples)
+{
+  unsigned int hash, bit, index,len;
+  unsigned char bloom;
+
+  unsigned int i;
+  unsigned int b = 378551;
+  unsigned int a = 63689;
+  numTuples *= BLOOM_SIZE;
+
+  //_RSHash_
+  hash = 0;
+  for(i=0; i<TUPLE_SIZE; i++)
+  {
+    hash = hash * a + (tuple[i]);
+    a    = a * b;
+  }
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+
+  //_JSHash_
+  hash = 1315423911;
+  for(i = 0; i < TUPLE_SIZE; i++)
+  {
+    hash ^= ((hash << 5) + (tuple[i]) + (hash >> 2));
+  }
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+
+  //_PJWHash_
+  unsigned int ThreeQuarters = (unsigned int)(((unsigned int)(sizeof(unsigned int) * 8)  * 3) / 4);
+  unsigned int HighBits = (unsigned int)(0xFFFFFFFF) << (sizeof(unsigned int) * 7);
+  hash = 0;
+  a = 0;
+
+  for(i = 0; i < TUPLE_SIZE; i++)
+  {
+    hash = (hash << sizeof(unsigned int)) + (tuple[i]);
+
+    if((a = hash & HighBits)  != 0)
+      hash = (( hash ^ (a >> ThreeQuarters)) & (~HighBits));
+  }
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+  //_ELFHash_
+  hash = 0;
+  a = 0;
+  for(i = 0; i < TUPLE_SIZE; i++)
+  {
+    hash = (hash << 4) + (tuple[i]);
+    if((a = hash & 0xF0000000L) != 0)
+      hash ^= (a >> 24);
+    hash &= ~a;
+  }
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);  ;
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+  //_BKDRHash_
+  hash=0;a=131;
+  for(i = 0; i < TUPLE_SIZE; i++)
+    hash = (hash * a) + (tuple[i]);
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+  //_SDBMHash_
+  hash=0;i=0;
+
+  for(i = 0; i < TUPLE_SIZE; i++)
+    hash = (tuple[i]) + (hash << 6) + (hash << 16) - hash;
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+
+  //_DJBHash_
+  hash = 5381;i=0;
+  for(i = 0; i < TUPLE_SIZE; i++)
+    hash = ((hash << 5) + hash) + (tuple[i]);
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+  //_DEKHash_
+  hash = TUPLE_SIZE;
+  for(i = 0; i < TUPLE_SIZE; i++)
+    hash = ((hash << 5) ^ (hash >> 27)) ^ (tuple[i]);
+
+  hash = hash % (numTuples * _char_size_);
+  bit  = hash & (_char_size_-1);
+  index = hash >> 3; // _char_size_ ;
+  bloom = tex1Dfetch( tex, index);
+
+  if ((bloom & _bit_mask_[bit]) != _bit_mask_[bit])
+  {
+    return -1;
+  }
+
+  return 1;
+}
+/********* END OF CONTAINS_WITHOUT_COPY ****************/
+
 ////////////////////////////////////////////////////////////////////////////////
 //! Fix two errors, step 1 kernel function
 //! @param d_reads_arr  input data in global memory
@@ -927,7 +1082,7 @@ if (w_tid == 0)
           for (unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ ){
             tempTuple = &str[p];
             if (d_strTpl_Valid(tempTuple)){
-              if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+              if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
                 allGood++; //solid[p] = 1;
               else{
                 for (unsigned vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE){
@@ -936,19 +1091,19 @@ if (w_tid == 0)
 
                   //for (unsigned mut = 0; mut < 3; mut++ ){
 
-                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
                       votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
                     mutNuc = nextNuc[mutNuc];
                     tempTuple[vp] = mutNuc;
 
-                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
                       votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
                     mutNuc = nextNuc[mutNuc];
                     tempTuple[vp] = mutNuc;
 
-                    if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
+                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
                       votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
                     mutNuc = nextNuc[mutNuc];
