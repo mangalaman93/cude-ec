@@ -823,8 +823,8 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
   
   // int solid[READ_LENGTH];
-  __shared__ bool solid_shared[READ_LENGTH*WARPS_BLOCK];
-  bool *solid = &solid_shared[READ_LENGTH * (threadIdx.x/WARPSIZE)];
+  // __shared__ bool solid_shared[READ_LENGTH*WARPS_BLOCK];
+  // bool *solid = &solid_shared[READ_LENGTH * (threadIdx.x/WARPSIZE)];
 
   //startPos
   __shared__ int startPos[WARPS_BLOCK];
@@ -834,7 +834,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
   // Cast votes for mutations
   short numAboveThreshold = 0,len;
-  short maxVotes = 0,allGood  = 1;
+  short maxVotes = 0,allGood  = 0;
   int numTies = -1,pindex = 0, mod, pos;
 
   //Access to shared memory
@@ -907,11 +907,11 @@ if (w_tid == 0)
                 votes[m*4+2] = 0;
                 votes[m*4+3] = 0;
           }
-          for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
+/*          for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
           {
               solid[m] = 0;
           }
-
+*/
           // for (m = 0; m < READ_LENGTH; m++) {
           //   for (int n = 0; n < 4; n++)
           //     //votes[threadIdx.x][m][n] = 0;
@@ -920,6 +920,7 @@ if (w_tid == 0)
 
           // for(m=0;m<READ_LENGTH;m++)
           //   solid[m] = 0;
+	  allGood = 0;
 
           char str[READ_LENGTH];
           _strncpy_(str, read, READ_LENGTH);
@@ -927,7 +928,7 @@ if (w_tid == 0)
             tempTuple = &str[p];
             if (d_strTpl_Valid(tempTuple)){
               if (lstspct_FindTuple(tempTuple, d_param->numTuples) != -1)
-                solid[p] = 1;
+                allGood++; //solid[p] = 1;
               else{
                 for (unsigned vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE){
                   mutNuc = nextNuc[tempTuple[vp]];
@@ -965,15 +966,15 @@ if (w_tid==0)
           ++numFixed;
 
           //////////////////////fix sequence based on voting in previous step//////////////
-          fixPos = 0;numAboveThreshold = 0;maxVotes = 0;allGood  = 1;
+          fixPos = 0;numAboveThreshold = 0;maxVotes = 0;
 
-          for (unsigned  p = 0; p < len - d_param->tupleSize + 1; p++ ) {
+/*          for (unsigned  p = 0; p < len - d_param->tupleSize + 1; p++ ) {
             if (solid[p] == 0) {
               allGood = 0;break;
             }
           }
-
-          if (allGood)
+*/
+          if (allGood == len-d_param->tupleSize+1)
             // no need to fix this sequence
             return_value =  1;
           else
