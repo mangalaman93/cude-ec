@@ -994,8 +994,9 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
   //Access to shared memory
   extern __shared__ char buffer[];
+  __shared__ char buffer2[READ_LENGTH*THREAD];
 
-  char *tempTuple, *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
+  char *tempTuple, *read = &buffer[w_id * (d_param->readLen + 2)];
 
   for(unsigned i=0;i<round;i++)
   {
@@ -1019,10 +1020,9 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
     {
       if(j  < endOffsetForThisWarp)
-        readsInOneRound_Warp[j-startOffsetForThisWarp] = d_reads_arr[j];
+        read[j-startOffsetForThisWarp] = d_reads_arr[j];
     }
 
-    read = readsInOneRound_Warp;
     //read = &readsInOneRound_Warp[(threadIdx.x % WARPSIZE) * (d_param->readLen + 2)];
     //read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
 
@@ -1077,8 +1077,10 @@ if (w_tid == 0)
           //   solid[m] = 0;
 	  allGood = 0;
 
-          char str[READ_LENGTH];
+          //char str[READ_LENGTH];
+          char *str = &buffer2[threadIdx.x*READ_LENGTH];  
           _strncpy_(str, read, READ_LENGTH);
+
           for (unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ ){
             tempTuple = &str[p];
             if (d_strTpl_Valid(tempTuple)){
@@ -1254,7 +1256,7 @@ if (w_tid == 0)
     for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
     {
       if(j  < endOffsetForThisWarp)
-        d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
+        d_reads_arr[j] = read[j-startOffsetForThisWarp];
     }
 
     //__syncthreads();
