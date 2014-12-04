@@ -997,7 +997,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
   char *tempTuple, *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
 
-  for(unsigned i=0;i<round;i++)
+  for(unsigned i=0;i<100;i++)
   {
     flag = 0;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
 
