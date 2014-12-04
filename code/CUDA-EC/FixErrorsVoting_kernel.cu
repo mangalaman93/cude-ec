@@ -820,7 +820,7 @@ __global__ void fix_errors1(char *d_reads_arr,Param *d_param)
   char *tempTuple, *read;
 
 
-  for(i=0;i<round;i++)
+  for(i=0;i<4;i++)
   {
     flag = 0;flag1=1;numFixed = 0;	numChanges=0;	return_value = 0;discardSeq = 0;
 
