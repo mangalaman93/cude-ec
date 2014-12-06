@@ -417,34 +417,20 @@ __device__ int TrimSequence(char *seq, int tupleSize, int numTuples,int maxTrim)
 ////////////////////////////////////////////////////////////////////////////////
 __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 {
-  short numSearch=1;
   nextNuc['G'] = 'A'; nextNuc['A'] = 'C'; nextNuc['C'] = 'T'; nextNuc['T'] = 'G';
 
-  // int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
   int w_tid = threadIdx.x & (WARPSIZE - 1);
   int w_id = threadIdx.x >> 5;
-  int round = 0;
 
   //# changing total number of threads
-  int total_thread = BLOCK * THREAD / WARPSIZE;
+  int chunk_bound = BLOCK * THREAD / WARPSIZE;
   int discardSeq=0;
-  int trimStart=0, trimEnd=0;
-
-  int chunk_bound = (total_thread < MAX_READS_BOUND ? total_thread:MAX_READS_BOUND);
-  round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
-
+  int round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
   int maxPos[2],maxMod[2];
   
-  // unsigned char votes[READ_LENGTH][4];
-  unsigned char mutNuc, cur;
+  unsigned char mutNuc;
   __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
   unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
-  
-  // int solid[READ_LENGTH];
-  // __shared__ bool solid_shared[READ_LENGTH*WARPS_BLOCK];
-  // bool *solid = &solid_shared[READ_LENGTH * (threadIdx.x/WARPSIZE)];
-
-  //startPos
   __shared__ int startPos[WARPS_BLOCK];
   
   int fixPos=-1,numFixed = 0,numChanges=0;
@@ -453,21 +439,16 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   // Cast votes for mutations
   short numAboveThreshold = 0,len;
   short maxVotes = 0,allGood  = 0;
-  int numTies = -1,pindex = 0, mod, pos;
+  int pindex = 0;
 
   //Access to shared memory
   extern __shared__ char buffer[];
 
-  char *tempTuple, *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
+  char *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
 
   for(unsigned i=0;i<round;i++)
   {
     flag = 0;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
-
-    //current_read_idx = c_tid/WARPSIZE + chunk_bound * i;
-
-    //check if run out of reads
-    //current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
 
     //Place reads in the shared memory after every round
     //Computing start offset for this warp
@@ -486,36 +467,55 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     }
 
     read = readsInOneRound_Warp;
-    //read = &readsInOneRound_Warp[(threadIdx.x % WARPSIZE) * (d_param->readLen + 2)];
-    //read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
-
-    //take 1 read per thread
-    //read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
 
     // get length of this read
     len = read[READ_LENGTH + 1];
 
-    if (!PrepareSequence(read)) {
-if (w_tid == 0)
-      discardSeq = 1;
-    }
-    else
+    // flag variable, PrepareSequence function
+    pindex = 1;
+    for(unsigned p = w_tid; p < READ_LENGTH; p+=WARPSIZE )
     {
-if (w_tid == 0)
-{
-      numFixed = 0; fixPos = -1;
-}
-      do{
+      read[p] = _toupper_(read[p]);
+      if (!(read[p] == 'A' ||
+            read[p] == 'C' ||
+            read[p] == 'T' ||
+            read[p] == 'G'))
+      {
+        pindex = 0;
+      }
+    }
+
+    if(__any(pindex == 0))
+    {
+      if(w_tid == 0 )
+      {
+        discardSeq = 1;
+      }
+    } else
+    {
+      if (w_tid == 0)
+      {
+        numFixed = 0;
+        fixPos = -1;
+      }
+
+      do
+      {
         if(__any(flag))
+        {
           break;
-        else{
-if (w_tid == 0)
-{
-          if (fixPos > 0)
-            startPos[w_id] = fixPos;
-          else
-            startPos[w_id] = 0;
-}
+        } else
+        {
+          if (w_tid == 0)
+          {
+            if (fixPos > 0)
+            {
+              startPos[w_id] = fixPos;
+            } else
+            {
+              startPos[w_id] = 0;
+            }
+          }
 
           //# parallelizing this loop
           for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
@@ -525,123 +525,105 @@ if (w_tid == 0)
                 votes[m*4+2] = 0;
                 votes[m*4+3] = 0;
           }
-/*          for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
-          {
-              solid[m] = 0;
-          }
-*/
-          // for (m = 0; m < READ_LENGTH; m++) {
-          //   for (int n = 0; n < 4; n++)
-          //     //votes[threadIdx.x][m][n] = 0;
-          //     votes_2d(m,n) = 0;
-          // }
-
-          // for(m=0;m<READ_LENGTH;m++)
-          //   solid[m] = 0;
-	  allGood = 0;
-
+          
+          allGood = 0;
           char str[READ_LENGTH];
           _strncpy_(str, read, READ_LENGTH);
-          for (unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ ){
-            tempTuple = &str[p];
-            if (d_strTpl_Valid(tempTuple)){
+          for(unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ )
+          {
+            char* tempTuple = &str[p];
+            if (d_strTpl_Valid(tempTuple))
+            {
               if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+              {
                 allGood++; //solid[p] = 1;
-              else{
-                for (unsigned vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE){
+              } else
+              {
+                for (unsigned vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE)
+                {
                   mutNuc = nextNuc[tempTuple[vp]];
                   tempTuple[vp] = mutNuc;
 
-                  //for (unsigned mut = 0; mut < 3; mut++ ){
+                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
-                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+                  mutNuc = nextNuc[mutNuc];
+                  tempTuple[vp] = mutNuc;
 
-                    mutNuc = nextNuc[mutNuc];
-                    tempTuple[vp] = mutNuc;
+                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
-                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+                  mutNuc = nextNuc[mutNuc];
+                  tempTuple[vp] = mutNuc;
 
-                    mutNuc = nextNuc[mutNuc];
-                    tempTuple[vp] = mutNuc;
+                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
-                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
-
-                    mutNuc = nextNuc[mutNuc];
-                    tempTuple[vp] = mutNuc;
- 
- 
-                  //}
+                  mutNuc = nextNuc[mutNuc];
+                  tempTuple[vp] = mutNuc;
                 }
               }
             }
           }
-if (w_tid==0)
-{
-          ////////////////vote completed//////////////////////
-          ++numFixed;
-
-          //////////////////////fix sequence based on voting in previous step//////////////
-          fixPos = 0;numAboveThreshold = 0;maxVotes = 0;
-
-/*          for (unsigned  p = 0; p < len - d_param->tupleSize + 1; p++ ) {
-            if (solid[p] == 0) {
-              allGood = 0;break;
-            }
-          }
-*/
-          if (allGood == len-d_param->tupleSize+1)
-            // no need to fix this sequence
-            return_value =  1;
-          else
+          
+          if (w_tid==0)
           {
-            for (unsigned p = 0; p < len; p++){
-              for (unsigned m = 0; m < 4; m++){
-                if (votes_2d(p,m) > d_param->minVotes)
-                  numAboveThreshold++;
+            ++numFixed;
 
-                if (votes_2d(p,m) >= maxVotes)
-                  maxVotes = votes_2d(p,m);
-              }
-            }
+            //////////////////////fix sequence based on voting in previous step//////////////
+            fixPos = 0;numAboveThreshold = 0;maxVotes = 0;
 
-            pindex = 0;numTies = -1;
+            if (allGood == len-d_param->tupleSize+1)
+              // no need to fix this sequence
+              return_value =  1;
+            else
+            {
+              for (unsigned p = 0; p < len; p++){
+                for (unsigned m = 0; m < 4; m++){
+                  if (votes_2d(p,m) > d_param->minVotes)
+                    numAboveThreshold++;
 
-            // Make sure there aren't multiple possible fixes
-            for (unsigned p = 0; p < len; p++){
-              for (unsigned m = 0; m < 4; m++){
-                if (votes_2d(p,m) == maxVotes){
-                  numTies++;
-                  maxPos[pindex] = p;
-                  maxMod[pindex] = m;
-                  pindex++;
-		  if (pindex > 1) {
-		    m = 4;
-		    p = len;
-		  }
+                  if (votes_2d(p,m) >= maxVotes)
+                    maxVotes = votes_2d(p,m);
                 }
               }
-            }
 
-            if (numAboveThreshold > 0 ){
-              if (numTies < numSearch || (pindex > 1 && maxPos[0] != maxPos[1])){
-                // Found at least one change to the sequence
-                for (unsigned s = 0; s < numSearch && s < pindex; s++) {
-                  mod = maxMod[s];
-                  pos = maxPos[s];
-                  fixPos = pos;
+              pindex = 0;
 
-                  if (mod < 4){
-                    cur = nuc_char[mod];
-                    read[pos] = cur;
+              // Make sure there aren't multiple possible fixes
+              for (unsigned p = 0; p < len; p++){
+                for (unsigned m = 0; m < 4; m++){
+                  if (votes_2d(p,m) == maxVotes){
+                    maxPos[pindex] = p;
+                    maxMod[pindex] = m;
+                    pindex++;
+              		  if (pindex > 1) {
+              		    m = 4;
+              		    p = len;
+              		  }
                   }
                 }
-                if( CheckSolid(read,d_param->tupleSize,d_param->numTuples))
-                  return_value = 1;
-                else{
-                  //reset
+              }
+
+              if (numAboveThreshold > 0 ){
+                if (pindex < 2 || (pindex > 1 && maxPos[0] != maxPos[1])){
+                  // Found at least one change to the sequence
+                  if (pindex>0) {
+                    fixPos = maxPos[0];
+
+                    if (maxMod[0] < 4){
+                      read[maxPos[0]] = nuc_char[maxMod[0]];
+                    }
+                  }
+                  if( CheckSolid(read,d_param->tupleSize,d_param->numTuples))
+                    return_value = 1;
+                  else{
+                    //reset
+                    return_value = 0;
+                  }
+                }
+                else
+                {
                   return_value = 0;
                 }
               }
@@ -650,77 +632,71 @@ if (w_tid==0)
                 return_value = 0;
               }
             }
-            else
+
+
+            //check fix sequence return
+            if( return_value)
             {
-              return_value = 0;
+              flag = 1;
+              numChanges = numFixed;
+              break;
             }
           }
-
-
-          //check fix sequence return
-          if( return_value)
-          {
-            flag = 1;
-            numChanges = numFixed;
-            break;
-          }
         }
-}
       } while (__any(fixPos > 0));
-
       /////////////////////////end of solidify////////
 
-if (w_tid == 0)
-{
-      if (numChanges != 0){
-        if (numChanges > d_param->maxMods)
-          discardSeq = 1;
-        else
-          discardSeq = 0;
-      }
-      else{
-        if( d_param->numSearch == 2){
-          //removed trim in fix error1
-          discardSeq = 1;
-        }
-        else
-        {
-          // Find the locations of the first solid positions.
-          if (d_param->doTrim)
-          {
-            if(TrimSequence(read, d_param->tupleSize, d_param->numTuples,d_param->maxTrim)){
-              // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
-              // and the subsequence between the trimmed ends is ok, print the
-              // trimmed coordinates.
-              discardSeq = 0;
-            }
-            else
-              discardSeq = 1;
-          }
-          else
+      if (w_tid == 0)
+      {
+        if (numChanges != 0){
+          if (numChanges > d_param->maxMods)
             discardSeq = 1;
+          else
+            discardSeq = 0;
+        } else
+        {
+          if( d_param->numSearch == 2)
+          {
+            //removed trim in fix error1
+            discardSeq = 1;
+          } else
+          {
+            // Find the locations of the first solid positions.
+            if (d_param->doTrim)
+            {
+              if(TrimSequence(read, d_param->tupleSize, d_param->numTuples,d_param->maxTrim)){
+                // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
+                // and the subsequence between the trimmed ends is ok, print the
+                // trimmed coordinates.
+                discardSeq = 0;
+              } else
+                discardSeq = 1;
+            } else 
+            {
+              discardSeq = 1;
+            }
+          }
         }
       }
-}
     }
 
-if (w_tid == 0)
-{
-    if (discardSeq) {
-      read[READ_LENGTH] = 'D'; //F fixed, D: not fixed, discard
+    if (w_tid == 0)
+    {
+      if (discardSeq)
+      {
+        read[READ_LENGTH] = 'D'; //F fixed, D: not fixed, discard
+      } else
+      {
+        read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
+      }
     }
-    else {
-      read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
-    }
-}
+
     //Save back results to global memory
     for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
     {
-      if(j  < endOffsetForThisWarp)
+      if(j < endOffsetForThisWarp)
         d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
     }
-
-    //__syncthreads();
   }
 }
 
