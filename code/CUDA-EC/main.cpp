@@ -284,7 +284,7 @@ int main(int argc, char** argv)
     for(j = 0; j < NUM_HASH; j++) {
       strcpy(tempTuple,tupleList[i].c_str());
 
-      hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size * 2);
+      hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size * char_size);
       hash_table[hash / char_size] |= bit_mask[hash % char_size];
     }
   }
