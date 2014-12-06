@@ -307,10 +307,11 @@ __device__ bool contains(char *key, unsigned int table_size)
   unsigned int a    = 63689;
 
   len = TUPLE_SIZE;
-  char str[TUPLE_SIZE+1];
+  // char str[TUPLE_SIZE+1];
 
-  _strncpy_(str, key,TUPLE_SIZE);
-  str[TUPLE_SIZE]=0;
+  // _strncpy_(str, key,TUPLE_SIZE);
+  // str[TUPLE_SIZE]=0;
+  char *str = key;
 
 
   //_RSHash_	
@@ -463,10 +464,11 @@ __device__ bool contains2(char *key, unsigned int table_size)
 
 
   len = TUPLE_SIZE;
-  char str[TUPLE_SIZE+1];
+  // char str[TUPLE_SIZE+1];
 
-  _strncpy_(str, key,TUPLE_SIZE);
-  str[TUPLE_SIZE]=0;
+  // _strncpy_(str, key,TUPLE_SIZE);
+  // str[TUPLE_SIZE]=0;
+  char* str = key;
 
   //_DEKHash_
   hash = len;i=0;
