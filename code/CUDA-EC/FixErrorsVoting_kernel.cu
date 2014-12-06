@@ -339,7 +339,7 @@ __device__ bool contains(char *key, unsigned int table_size)
     hash ^= ((hash << 5) + (str[i]) + (hash >> 2));
   }
 
-  hash = hash % (table_size * 2);
+  hash = hash % (table_size * _char_size_);
   bit  = hash % _char_size_;
   index = hash / _char_size_ ;
   bloom = tex1Dfetch( tex, index);    
