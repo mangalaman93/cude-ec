@@ -417,96 +417,89 @@ __device__ int TrimSequence(char *seq, int tupleSize, int numTuples,int maxTrim)
 ////////////////////////////////////////////////////////////////////////////////
 __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 {
-  nextNuc['G'] = 'A'; nextNuc['A'] = 'C'; nextNuc['C'] = 'T'; nextNuc['T'] = 'G';
-
   int w_tid = threadIdx.x & (WARPSIZE - 1);
   int w_id = threadIdx.x >> 5;
-
-  //# changing total number of threads
-  int chunk_bound = BLOCK * THREAD / WARPSIZE;
-  int discardSeq=0;
-  int round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
-  int maxPos[2],maxMod[2];
-  
-  unsigned char mutNuc;
-  __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
-  unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
-  __shared__ int startPos[WARPS_BLOCK];
-  
-  int fixPos=-1,numFixed = 0,numChanges=0;
-  short return_value = 0,flag = 0;
-
-  // Cast votes for mutations
-  short numAboveThreshold = 0,len;
-  short maxVotes = 0,allGood  = 0;
-  int pindex = 0;
-
-  //Access to shared memory
-  extern __shared__ char buffer[];
-
-  char *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
-
-  for(unsigned i=0;i<round;i++)
+  if(w_tid == 0)
   {
-    flag = 0;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
+    nextNuc['G'] = 'A'; nextNuc['A'] = 'C'; nextNuc['C'] = 'T'; nextNuc['T'] = 'G';
 
-    //Place reads in the shared memory after every round
-    //Computing start offset for this warp
-    //Go till end offset for this warp
-    //Fill the shared buffer while coalescing global memory accesses
-    //Doing it at a warp level will remove the requirement of syncing threads
-    int startOffsetForThisWarp = ((w_id) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2);
-    int endOffsetForThisWarp = min(\
-          ((w_id + 1) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2),\
-          d_param->NUM_OF_READS * (d_param->readLen + 2));
+    //# changing total number of threads
+    int chunk_bound = BLOCK * THREAD / WARPSIZE;
+    int discardSeq=0;
+    int round = d_param->NUM_OF_READS/chunk_bound + (d_param->NUM_OF_READS%chunk_bound == 0 ? 0:1);
+    int maxPos[2],maxMod[2];
+    
+    unsigned char mutNuc;
+    __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
+    unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
+    __shared__ int startPos[WARPS_BLOCK];
+    
+    int fixPos=-1,numFixed = 0,numChanges=0;
+    short return_value = 0,flag = 0;
 
-    for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
+    // Cast votes for mutations
+    short numAboveThreshold = 0,len;
+    short maxVotes = 0,allGood  = 0;
+    int pindex = 0;
+
+    //Access to shared memory
+    extern __shared__ char buffer[];
+
+    char *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
+
+    for(unsigned i=0;i<round;i++)
     {
-      if(j  < endOffsetForThisWarp)
-        readsInOneRound_Warp[j-startOffsetForThisWarp] = d_reads_arr[j];
-    }
+      flag = 0;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
 
-    read = readsInOneRound_Warp;
+      //Place reads in the shared memory after every round
+      //Computing start offset for this warp
+      //Go till end offset for this warp
+      //Fill the shared buffer while coalescing global memory accesses
+      //Doing it at a warp level will remove the requirement of syncing threads
+      int startOffsetForThisWarp = ((w_id) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2);
+      int endOffsetForThisWarp = min(\
+            ((w_id + 1) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2),\
+            d_param->NUM_OF_READS * (d_param->readLen + 2));
 
-    // get length of this read
-    len = read[READ_LENGTH + 1];
-
-    // flag variable, PrepareSequence function
-    pindex = 1;
-    for(unsigned p = w_tid; p < READ_LENGTH; p+=WARPSIZE )
-    {
-      read[p] = _toupper_(read[p]);
-      if (!(read[p] == 'A' ||
-            read[p] == 'C' ||
-            read[p] == 'T' ||
-            read[p] == 'G'))
+      for (int j= startOffsetForThisWarp + 0; j< endOffsetForThisWarp; j += 1)
       {
-        pindex = 0;
+        if(j  < endOffsetForThisWarp)
+          readsInOneRound_Warp[j-startOffsetForThisWarp] = d_reads_arr[j];
       }
-    }
 
-    if(__any(pindex == 0))
-    {
-      if(w_tid == 0 )
+      read = readsInOneRound_Warp;
+
+      // get length of this read
+      len = read[READ_LENGTH + 1];
+
+      // flag variable, PrepareSequence function
+      pindex = 1;
+      for(unsigned p = 0; p < READ_LENGTH; p+=1 )
+      {
+        read[p] = _toupper_(read[p]);
+        if (!(read[p] == 'A' ||
+              read[p] == 'C' ||
+              read[p] == 'T' ||
+              read[p] == 'G'))
+        {
+          pindex = 0;
+        }
+      }
+
+      if(__any(pindex == 0))
       {
         discardSeq = 1;
-      }
-    } else
-    {
-      if (w_tid == 0)
+      } else
       {
         numFixed = 0;
         fixPos = -1;
-      }
 
-      do
-      {
-        if(__any(flag))
+        do
         {
-          break;
-        } else
-        {
-          if (w_tid == 0)
+          if(__any(flag))
+          {
+            break;
+          } else
           {
             if (fixPos > 0)
             {
@@ -515,69 +508,66 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
             {
               startPos[w_id] = 0;
             }
-          }
 
-          //# parallelizing this loop
-          for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
-          {
-                votes[m*4+0] = 0;
-                votes[m*4+1] = 0;
-                votes[m*4+2] = 0;
-                votes[m*4+3] = 0;
-          }
-          
-          allGood = 0;
-          char str[READ_LENGTH];
-          _strncpy_(str, read, READ_LENGTH);
-          for(unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ )
-          {
-            char* tempTuple = &str[p];
-
-            pindex = 1;
-            for (unsigned i = w_tid; i < TUPLE_SIZE; i+=WARPSIZE)
+            //# parallelizing this loop
+            for(unsigned m=0; m<READ_LENGTH; m+=1)
             {
-              if (numeric_nuc_index[tempTuple[i]] >= 4)
-              {
-                pindex = 0;
-              }
+                  votes[m*4+0] = 0;
+                  votes[m*4+1] = 0;
+                  votes[m*4+2] = 0;
+                  votes[m*4+3] = 0;
             }
-
-            if (__all(pindex))
+            
+            allGood = 0;
+            char str[READ_LENGTH];
+            _strncpy_(str, read, READ_LENGTH);
+            for(unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ )
             {
-              if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+              char* tempTuple = &str[p];
+
+              pindex = 1;
+              for (unsigned i = 0; i < TUPLE_SIZE; i+=1)
               {
-                allGood++; //solid[p] = 1;
-              } else
-              {
-                for (unsigned vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE)
+                if (numeric_nuc_index[tempTuple[i]] >= 4)
                 {
-                  mutNuc = nextNuc[tempTuple[vp]];
-                  tempTuple[vp] = mutNuc;
+                  pindex = 0;
+                }
+              }
 
-                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+              if (__all(pindex))
+              {
+                if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                {
+                  allGood++; //solid[p] = 1;
+                } else
+                {
+                  for (unsigned vp = 0; vp < d_param->tupleSize; vp+=1)
+                  {
+                    mutNuc = nextNuc[tempTuple[vp]];
+                    tempTuple[vp] = mutNuc;
 
-                  mutNuc = nextNuc[mutNuc];
-                  tempTuple[vp] = mutNuc;
+                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
-                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+                    mutNuc = nextNuc[mutNuc];
+                    tempTuple[vp] = mutNuc;
 
-                  mutNuc = nextNuc[mutNuc];
-                  tempTuple[vp] = mutNuc;
+                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
-                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+                    mutNuc = nextNuc[mutNuc];
+                    tempTuple[vp] = mutNuc;
 
-                  mutNuc = nextNuc[mutNuc];
-                  tempTuple[vp] = mutNuc;
+                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+
+                    mutNuc = nextNuc[mutNuc];
+                    tempTuple[vp] = mutNuc;
+                  }
                 }
               }
             }
-          }
           
-          if (w_tid==0)
-          {
             ++numFixed;
 
             //////////////////////fix sequence based on voting in previous step//////////////
@@ -652,12 +642,9 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
               break;
             }
           }
-        }
-      } while (__any(fixPos > 0));
-      /////////////////////////end of solidify////////
+        } while (__any(fixPos > 0));
+        /////////////////////////end of solidify////////
 
-      if (w_tid == 0)
-      {
         if (numChanges != 0){
           if (numChanges > d_param->maxMods)
             discardSeq = 1;
@@ -688,10 +675,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
           }
         }
       }
-    }
 
-    if (w_tid == 0)
-    {
       if (discardSeq)
       {
         read[READ_LENGTH] = 'D'; //F fixed, D: not fixed, discard
@@ -699,13 +683,13 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
       {
         read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
       }
-    }
 
-    //Save back results to global memory
-    for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
-    {
-      if(j < endOffsetForThisWarp)
-        d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
+      //Save back results to global memory
+      for (int j= startOffsetForThisWarp + 0; j< endOffsetForThisWarp; j += 1)
+      {
+        if(j < endOffsetForThisWarp)
+          d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
+      }
     }
   }
 }
