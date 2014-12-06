@@ -356,25 +356,21 @@ __device__ int SolidSubsequence(char *seq, int tupleSize, int &seqStart, int &se
   return 1;
 }
 
-__device__ int TrimSequence(char *seq, int tupleSize, int &seqStart, int &seqEnd, int numTuples,int maxTrim)
+__device__ int TrimSequence(char *seq, int tupleSize, int numTuples,int maxTrim)
 {
-  seqStart = 0;
+  int seqStart, seqEnd;
   int flag = 1;
 
   //get length of this read
   int len = seq[READ_LENGTH + 1];
 
-  for(unsigned i = 0; i < len - tupleSize + 1; i++ )
+  for(seqStart = 0; seqStart < len - tupleSize + 1; seqStart++ )
   {
-    if (lstspct_FindTuple_With_Copy(&seq[i],numTuples) != -1) {
+    if (lstspct_FindTuple_With_Copy(&seq[seqStart],numTuples) != -1) {
       break;
     }
-
-    // Not solid yet, advance
-    seqStart++;
   }
 
-  seqEnd = len;
   unsigned i = seqStart + 1;
   for (; i < len - tupleSize + 1; i++ )
   {
@@ -692,7 +688,7 @@ if (w_tid == 0)
           // Find the locations of the first solid positions.
           if (d_param->doTrim)
           {
-            if(TrimSequence(read, d_param->tupleSize,trimStart, trimEnd, d_param->numTuples,d_param->maxTrim)){
+            if(TrimSequence(read, d_param->tupleSize, d_param->numTuples,d_param->maxTrim)){
               // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
               // and the subsequence between the trimmed ends is ok, print the
               // trimmed coordinates.
@@ -987,7 +983,7 @@ __global__ void fix_errors2(char *d_reads_arr,Param *d_param, int numReads)
 
         // Find the locations of the first solid positions.
         if (d_param->doTrim){
-          if(TrimSequence(read, d_param->tupleSize,trimStart, trimEnd, d_param->numTuples,d_param->maxTrim)){
+          if(TrimSequence(read, d_param->tupleSize, d_param->numTuples,d_param->maxTrim)){
             // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
             // and the subsequence between the trimmed ends is ok, print the
             // trimmed coordinates.
