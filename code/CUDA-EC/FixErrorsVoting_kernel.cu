@@ -417,6 +417,7 @@ __device__ int TrimSequence(char *seq, int tupleSize, int numTuples,int maxTrim)
 ////////////////////////////////////////////////////////////////////////////////
 __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 {
+  int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
   int w_tid = threadIdx.x & (WARPSIZE - 1);
   int w_id = threadIdx.x >> 5;
   if(w_tid == 0)
@@ -430,9 +431,8 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     int maxPos[2],maxMod[2];
     
     unsigned char mutNuc;
-    __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
-    unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
-    __shared__ int startPos[WARPS_BLOCK];
+    unsigned char votes[READ_LENGTH*4];
+    int startPos;
     
     int fixPos=-1,numFixed = 0,numChanges=0;
     short return_value = 0,flag = 0;
@@ -503,10 +503,10 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
           {
             if (fixPos > 0)
             {
-              startPos[w_id] = fixPos;
+              startPos = fixPos;
             } else
             {
-              startPos[w_id] = 0;
+              startPos = 0;
             }
 
             //# parallelizing this loop
@@ -521,7 +521,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
             allGood = 0;
             char str[READ_LENGTH];
             _strncpy_(str, read, READ_LENGTH);
-            for(unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ )
+            for(unsigned p = startPos; p < len - d_param->tupleSize + 1; p++ )
             {
               char* tempTuple = &str[p];
 
