@@ -270,7 +270,25 @@ int main(int argc, char** argv)
   for(unsigned int i = 0; i < table_size; ++i) 
     hash_table[i] = 0;
 
-  for(i=0;i<numPastThresh;i++){
+  for(i=0;i<1;i++){
+    //insert
+    for(j = 0; j < NUM_HASH; j++) {
+      strcpy(tempTuple,tupleList[i].c_str());
+
+      hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size);
+      hash_table[hash / char_size] |= bit_mask[hash % char_size];
+    }
+  }
+  for(i=1;i<2;i++){
+    //insert
+    for(j = 0; j < NUM_HASH; j++) {
+      strcpy(tempTuple,tupleList[i].c_str());
+
+      hash = hash_function_list[j](tempTuple,TUPLE_SIZE) % (table_size * 2);
+      hash_table[hash / char_size] |= bit_mask[hash % char_size];
+    }
+  }
+  for(i=2;i<numPastThresh;i++){
     //insert
     for(j = 0; j < NUM_HASH; j++) {
       strcpy(tempTuple,tupleList[i].c_str());
@@ -279,6 +297,8 @@ int main(int argc, char** argv)
       hash_table[hash / char_size] |= bit_mask[hash % char_size];
     }
   }
+
+
 
   //free memory, vector string
   delete []tempTuple;
