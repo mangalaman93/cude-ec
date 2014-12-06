@@ -532,7 +532,17 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
           for(unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ )
           {
             char* tempTuple = &str[p];
-            if (d_strTpl_Valid(tempTuple))
+
+            pindex = 1;
+            for (unsigned i = w_tid; i < TUPLE_SIZE; i+=WARPSIZE)
+            {
+              if (numeric_nuc_index[tempTuple[i]] >= 4)
+              {
+                pindex = 0;
+              }
+            }
+
+            if (__all(pindex))
             {
               if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
               {
