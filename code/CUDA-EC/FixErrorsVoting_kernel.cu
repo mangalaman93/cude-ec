@@ -417,9 +417,9 @@ __device__ int TrimSequence(char *seq, int tupleSize, int numTuples,int maxTrim)
 ////////////////////////////////////////////////////////////////////////////////
 __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 {
-  int c_tid = blockIdx.x * blockDim.x + threadIdx.x;
   int w_tid = threadIdx.x & (WARPSIZE - 1);
-  int w_id = threadIdx.x >> 5;
+  int w_id = threadIdx.x >> 5;  
+  int c_tid = blockIdx.x * WARPS_BLOCK + w_id;
   if(w_tid == 0)
   {
     nextNuc['G'] = 'A'; nextNuc['A'] = 'C'; nextNuc['C'] = 'T'; nextNuc['T'] = 'G';
@@ -442,32 +442,15 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     short maxVotes = 0,allGood  = 0;
     int pindex = 0;
 
-    //Access to shared memory
-    extern __shared__ char buffer[];
-
-    char *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
+    char *read;
 
     for(unsigned i=0;i<round;i++)
     {
+      unsigned current_read_idx = c_tid + chunk_bound * i;
+      current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
+      read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
+
       flag = 0;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
-
-      //Place reads in the shared memory after every round
-      //Computing start offset for this warp
-      //Go till end offset for this warp
-      //Fill the shared buffer while coalescing global memory accesses
-      //Doing it at a warp level will remove the requirement of syncing threads
-      int startOffsetForThisWarp = ((w_id) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2);
-      int endOffsetForThisWarp = min(\
-            ((w_id + 1) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2),\
-            d_param->NUM_OF_READS * (d_param->readLen + 2));
-
-      for (int j= startOffsetForThisWarp + 0; j< endOffsetForThisWarp; j += 1)
-      {
-        if(j  < endOffsetForThisWarp)
-          readsInOneRound_Warp[j-startOffsetForThisWarp] = d_reads_arr[j];
-      }
-
-      read = readsInOneRound_Warp;
 
       // get length of this read
       len = read[READ_LENGTH + 1];
@@ -486,7 +469,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
         }
       }
 
-      if(__any(pindex == 0))
+      if(pindex == 0)
       {
         discardSeq = 1;
       } else
@@ -496,7 +479,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
         do
         {
-          if(__any(flag))
+          if(flag)
           {
             break;
           } else
@@ -534,7 +517,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
                 }
               }
 
-              if (__all(pindex))
+              if (pindex)
               {
                 if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
                 {
@@ -642,7 +625,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
               break;
             }
           }
-        } while (__any(fixPos > 0));
+        } while (fixPos > 0);
         /////////////////////////end of solidify////////
 
         if (numChanges != 0){
@@ -684,12 +667,6 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
         read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
       }
 
-      //Save back results to global memory
-      for (int j= startOffsetForThisWarp + 0; j< endOffsetForThisWarp; j += 1)
-      {
-        if(j < endOffsetForThisWarp)
-          d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
-      }
     }
   }
 }
