@@ -442,20 +442,24 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   int pindex = 0;
 
   //Access to shared memory
-  extern __shared__ char buffer[];
+  // extern __shared__ char buffer[];
 
-  char *read, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
+  char *read; //, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
+  int c_tid = blockIdx.x * WARPS_BLOCK + w_id;
 
   for(unsigned i=0;i<round;i++)
   {
     flag = 0;numFixed = 0;  numChanges=0; return_value = 0;discardSeq = 0;
+    unsigned current_read_idx = c_tid + chunk_bound * i;
+    current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
+    read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
 
     //Place reads in the shared memory after every round
     //Computing start offset for this warp
     //Go till end offset for this warp
     //Fill the shared buffer while coalescing global memory accesses
     //Doing it at a warp level will remove the requirement of syncing threads
-    int startOffsetForThisWarp = ((w_id) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2);
+    /*int startOffsetForThisWarp = ((w_id) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2);
     int endOffsetForThisWarp = min(\
           ((w_id + 1) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2),\
           d_param->NUM_OF_READS * (d_param->readLen + 2));
@@ -466,7 +470,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
         readsInOneRound_Warp[j-startOffsetForThisWarp] = d_reads_arr[j];
     }
 
-    read = readsInOneRound_Warp;
+    read = readsInOneRound_Warp;*/
 
     // get length of this read
     len = read[READ_LENGTH + 1];
@@ -702,11 +706,11 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     }
 
     //Save back results to global memory
-    for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
+    /*for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
     {
       if(j < endOffsetForThisWarp)
         d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
-    }
+    }*/
   }
 }
 
