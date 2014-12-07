@@ -454,24 +454,6 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
     current_read_idx = (current_read_idx > d_param->NUM_OF_READS ? 0:current_read_idx);
     read = &d_reads_arr[current_read_idx*(READ_LENGTH + 2)];
 
-    //Place reads in the shared memory after every round
-    //Computing start offset for this warp
-    //Go till end offset for this warp
-    //Fill the shared buffer while coalescing global memory accesses
-    //Doing it at a warp level will remove the requirement of syncing threads
-    /*int startOffsetForThisWarp = ((w_id) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2);
-    int endOffsetForThisWarp = min(\
-          ((w_id + 1) + blockIdx.x*WARPS_BLOCK + chunk_bound * i)* (d_param->readLen + 2),\
-          d_param->NUM_OF_READS * (d_param->readLen + 2));
-
-    for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
-    {
-      if(j  < endOffsetForThisWarp)
-        readsInOneRound_Warp[j-startOffsetForThisWarp] = d_reads_arr[j];
-    }
-
-    read = readsInOneRound_Warp;*/
-
     // get length of this read
     len = read[READ_LENGTH + 1];
 
@@ -669,27 +651,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
             discardSeq = 0;
         } else
         {
-          if( d_param->numSearch == 2)
-          {
-            //removed trim in fix error1
-            discardSeq = 1;
-          } else
-          {
-            // Find the locations of the first solid positions.
-            if (d_param->doTrim)
-            {
-              if(TrimSequence(read, d_param->tupleSize, d_param->numTuples,d_param->maxTrim)){
-                // If there is space for one solid tuple (trimStart < trimEnd - ts+1)
-                // and the subsequence between the trimmed ends is ok, print the
-                // trimmed coordinates.
-                discardSeq = 0;
-              } else
-                discardSeq = 1;
-            } else 
-            {
-              discardSeq = 1;
-            }
-          }
+          discardSeq = 1;
         }
       }
     }
@@ -704,13 +666,6 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
         read[READ_LENGTH] = 'F'; //F fixed, D: not fixed, discard
       }
     }
-
-    //Save back results to global memory
-    /*for (int j= startOffsetForThisWarp + w_tid; j< endOffsetForThisWarp; j += WARPSIZE)
-    {
-      if(j < endOffsetForThisWarp)
-        d_reads_arr[j] = readsInOneRound_Warp[j-startOffsetForThisWarp];
-    }*/
   }
 }
 
