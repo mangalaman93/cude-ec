@@ -572,13 +572,28 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
             if (allGood == len-d_param->tupleSize+1)
               // no need to fix this sequence
               return_value =  1;
-            else
+          }
+            
+          if (allGood != len-d_param->tupleSize+1)
+          {
+            for (unsigned p = w_tid; p < len; p+=WARPSIZE)
             {
-              for (unsigned p = 0; p < len; p++){
-                for (unsigned m = 0; m < 4; m++){
-                  if (votes_2d(p,m) > d_param->minVotes)
-                    numAboveThreshold++;
+              if(votes_2d(p,0) > d_param->minVotes)
+                numAboveThreshold = 1;
+              if(votes_2d(p,1) > d_param->minVotes)
+                numAboveThreshold = 1;
+              if(votes_2d(p,2) > d_param->minVotes)
+                numAboveThreshold = 1;
+              if(votes_2d(p,3) > d_param->minVotes)
+                numAboveThreshold = 1;
+            }
 
+            if (w_tid==0)
+            {
+              for (unsigned p = 0; p < len; p++)
+              {
+                for (unsigned m = 0; m < 4; m++)
+                {
                   if (votes_2d(p,m) >= maxVotes)
                     maxVotes = votes_2d(p,m);
                 }
@@ -601,7 +616,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
                 }
               }
 
-              if (numAboveThreshold > 0 ){
+              if (__any(numAboveThreshold > 0 )){
                 if (pindex < 2 || (pindex > 1 && maxPos[0] != maxPos[1])){
                   // Found at least one change to the sequence
                   if (pindex>0) {
