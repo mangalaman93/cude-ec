@@ -495,10 +495,10 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
             //# parallelizing this loop
             for(unsigned m=0; m<READ_LENGTH; m+=1)
             {
-                  votes[m*4+0] = 0;
-                  votes[m*4+1] = 0;
-                  votes[m*4+2] = 0;
-                  votes[m*4+3] = 0;
+              for(unsigned l=0; l<4; l++)
+              {
+                votes_2d(m,l) = 0;
+              }
             }
             
             allGood = 0;
@@ -529,23 +529,14 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
                     mutNuc = nextNuc[tempTuple[vp]];
                     tempTuple[vp] = mutNuc;
 
-                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
+                    for(unsigned l=0; l<3; l++)
+                    {
+                      if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
+                        votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
-                    mutNuc = nextNuc[mutNuc];
-                    tempTuple[vp] = mutNuc;
-
-                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
-
-                    mutNuc = nextNuc[mutNuc];
-                    tempTuple[vp] = mutNuc;
-
-                    if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                      votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
-
-                    mutNuc = nextNuc[mutNuc];
-                    tempTuple[vp] = mutNuc;
+                      mutNuc = nextNuc[mutNuc];
+                      tempTuple[vp] = mutNuc;
+                    }
                   }
                 }
               }
