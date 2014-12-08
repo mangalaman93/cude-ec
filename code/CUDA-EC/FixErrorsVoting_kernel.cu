@@ -432,10 +432,9 @@ if(w_tid == 0)
   int maxPos[2],maxMod[2];
   
   unsigned char mutNuc;
-  __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
-  unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
-  __shared__ int startPos[WARPS_BLOCK];
-  volatile __shared__ short localMaxVotes[WARPSIZE*WARPS_BLOCK];
+  unsigned char votes[READ_LENGTH*4];
+  int startPos;
+  // volatile __shared__ short localMaxVotes[WARPSIZE*WARPS_BLOCK];
   
   int fixPos=-1,numFixed = 0,numChanges=0;
   short return_value = 0,flag = 0;
@@ -445,7 +444,7 @@ if(w_tid == 0)
   short maxVotes = 0,allGood  = 0;
   int pindex = 0;
 
-  //Access to shared memory
+  // Access to shared memory
   // extern __shared__ char buffer[];
 
   char *read; //, *readsInOneRound_Warp = &buffer[w_id * (d_param->readLen + 2)];
@@ -500,10 +499,10 @@ if(w_tid == 0)
           {
             if (fixPos > 0)
             {
-              startPos[w_id] = fixPos;
+              startPos = fixPos;
             } else
             {
-              startPos[w_id] = 0;
+              startPos = 0;
             }
           }
 
@@ -519,7 +518,7 @@ if(w_tid == 0)
           allGood = 0;
           char str[READ_LENGTH];
           _strncpy_(str, read, READ_LENGTH);
-          for(unsigned p = startPos[w_id]; p < len - d_param->tupleSize + 1; p++ )
+          for(unsigned p = startPos; p < len - d_param->tupleSize + 1; p++ )
           {
             char* tempTuple = &str[p];
 
