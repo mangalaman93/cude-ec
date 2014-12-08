@@ -423,6 +423,8 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   int w_tid = threadIdx.x & (WARPSIZE - 1);
   int w_id = threadIdx.x >> 5;
 
+if(w_tid == 0)
+{
   //# changing total number of threads
   int chunk_bound = BLOCK * THREAD / WARPSIZE;
   int discardSeq=0;
@@ -461,7 +463,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
     // flag variable, PrepareSequence function
     pindex = 1;
-    for(unsigned p = w_tid; p < READ_LENGTH; p+=WARPSIZE )
+    for(unsigned p = 0; p < READ_LENGTH; p+=1)
     {
       read[p] = _toupper_(read[p]);
       if (!(read[p] == 'A' ||
@@ -506,7 +508,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
           }
 
           //# parallelizing this loop
-          for(unsigned m=w_tid; m<READ_LENGTH; m+=WARPSIZE)
+          for(unsigned m=0; m<READ_LENGTH; m+=1)
           {
                 votes[m*4+0] = 0;
                 votes[m*4+1] = 0;
@@ -522,7 +524,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
             char* tempTuple = &str[p];
 
             pindex = 1;
-            for (unsigned i = w_tid; i < TUPLE_SIZE; i+=WARPSIZE)
+            for (unsigned i = 0; i < TUPLE_SIZE; i+=1)
             {
               if (numeric_nuc_index[tempTuple[i]] >= 4)
               {
@@ -537,7 +539,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
                 allGood++; //solid[p] = 1;
               } else
               {
-                for (unsigned vp = w_tid; vp < d_param->tupleSize; vp+=WARPSIZE)
+                for (unsigned vp = 0; vp < d_param->tupleSize; vp+=1)
                 {
                   mutNuc = nextNuc[tempTuple[vp]];
                   tempTuple[vp] = mutNuc;
@@ -582,7 +584,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
 
           if (allGood != len-d_param->tupleSize+1)
           {
-            for (unsigned p = w_tid; p < len; p+=WARPSIZE){
+            for (unsigned p = 0; p < len; p+=1){
               if (votes_2d(p,0) > d_param->minVotes)
                 numAboveThreshold=1;
 
@@ -603,32 +605,12 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
       
           if (allGood != len-d_param->tupleSize+1)
           {
-            for (unsigned p = w_tid; p < len; p+=WARPSIZE){
+            for (unsigned p = 0; p < len; p+=1){
               for (unsigned m = 0; m < 4; m++){
-
-                if (votes_2d(p,0) >= maxVotes)
-                  maxVotes = votes_2d(p,0);
-
-                if (votes_2d(p,1) >= maxVotes)
-                  maxVotes = votes_2d(p,1);
-
-                if (votes_2d(p,2) >= maxVotes)
-                  maxVotes = votes_2d(p,2);
-
-                if (votes_2d(p,3) >= maxVotes)
-                  maxVotes = votes_2d(p,3);
+                if (votes_2d(p,m) >= maxVotes)
+                  maxVotes = votes_2d(p,m);
               }
             }
-            localMaxVotes_2d(w_id, w_tid) = maxVotes;
-            if(w_tid < 16)
-            {
-              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 16));
-              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 8));
-              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 4));
-              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 2));
-              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 1));
-            }
-            maxVotes = localMaxVotes_2d(w_id, 0);
           }
 
 
@@ -720,6 +702,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
       }
     }
   }
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
