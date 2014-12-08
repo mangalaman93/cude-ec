@@ -581,16 +581,24 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
           if (allGood != len-d_param->tupleSize+1)
           {
             for (unsigned p = w_tid; p < len; p+=WARPSIZE){
-              for (unsigned m = 0; m < 4; m++){
-                if (votes_2d(p,m) > d_param->minVotes)
-                  numAboveThreshold++;
-              }
+              if (votes_2d(p,0) > d_param->minVotes)
+                numAboveThreshold=1;
+
+              if (votes_2d(p,1) > d_param->minVotes)
+                numAboveThreshold=1;
+
+              if (votes_2d(p,2) > d_param->minVotes)
+                numAboveThreshold=1;
+
+              if (votes_2d(p,3) > d_param->minVotes)
+                  numAboveThreshold=1;
             }
           }
 
           if(__any(numAboveThreshold))
             numAboveThreshold=1;
 
+      
           if (w_tid ==0)
           {
             if (allGood != len-d_param->tupleSize+1)
@@ -602,7 +610,13 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
                     maxVotes = votes_2d(p,m);
                 }
               }
+            }
+          }
 
+          if (w_tid ==0)
+          {
+            if (allGood != len-d_param->tupleSize+1)
+            {
               pindex = 0;
 
               // Make sure there aren't multiple possible fixes
