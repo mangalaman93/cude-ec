@@ -49,6 +49,7 @@
 
 texture<unsigned char,1, cudaReadModeElementType> tex;
 #define votes_2d(m,n) votes[(m)*4+(n)]
+#define localMaxVotes_2d(m,n) localMaxVotes[(m)*WARPSIZE + (n)]
 
 __constant__ unsigned int _char_size_ = 0x08;    // 8 bits in 1 char(unsigned)
 
@@ -432,6 +433,7 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
   __shared__ unsigned char votes_shared[WARPS_BLOCK*READ_LENGTH*4];
   unsigned char* votes = &votes_shared[READ_LENGTH*4*(threadIdx.x/WARPSIZE)];
   __shared__ int startPos[WARPS_BLOCK];
+  __shared__ volatile short localMaxVotes[WARPSIZE*WARPS_BLOCK];
   
   int fixPos=-1,numFixed = 0,numChanges=0;
   short return_value = 0,flag = 0;
@@ -588,17 +590,33 @@ __global__ void fix_errors1_warp_copy(char *d_reads_arr,Param *d_param)
                 numAboveThreshold = 1;
             }
 
+            for (unsigned p = w_tid; p < len; p+=WARPSIZE)
+            {
+              if (votes_2d(p,0) >= maxVotes)
+                maxVotes = votes_2d(p,0);
+
+              if (votes_2d(p,1) >= maxVotes)
+                maxVotes = votes_2d(p,1);
+
+              if (votes_2d(p,2) >= maxVotes)
+                maxVotes = votes_2d(p,2);
+
+              if (votes_2d(p,3) >= maxVotes)
+                maxVotes = votes_2d(p,3);
+            }
+            localMaxVotes_2d(w_id, w_tid) = maxVotes;
+            if(w_tid < 16)
+            {
+              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 16));
+              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 8));
+              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 4));
+              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 2));
+              localMaxVotes_2d(w_id, w_tid) = max(localMaxVotes_2d(w_id, w_tid), localMaxVotes_2d(w_id, w_tid + 1));
+            }
+            maxVotes = localMaxVotes_2d(w_id, 0);
+
             if (w_tid==0)
             {
-              for (unsigned p = 0; p < len; p++)
-              {
-                for (unsigned m = 0; m < 4; m++)
-                {
-                  if (votes_2d(p,m) >= maxVotes)
-                    maxVotes = votes_2d(p,m);
-                }
-              }
-
               pindex = 0;
 
               // Make sure there aren't multiple possible fixes
