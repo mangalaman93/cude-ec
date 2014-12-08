@@ -509,10 +509,8 @@ if(w_tid == 0)
           //# parallelizing this loop
           for(unsigned m=0; m<READ_LENGTH; m+=1)
           {
-                votes[m*4+0] = 0;
-                votes[m*4+1] = 0;
-                votes[m*4+2] = 0;
-                votes[m*4+3] = 0;
+            for(unsigned l=0; l<4; l++)
+                votes[m*4+l] = 0;
           }
           
           allGood = 0;
@@ -542,24 +540,13 @@ if(w_tid == 0)
                 {
                   mutNuc = nextNuc[tempTuple[vp]];
                   tempTuple[vp] = mutNuc;
-
+                 for(unsigned m=0; m<3; m++) {
                   if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
                     votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
 
                   mutNuc = nextNuc[mutNuc];
                   tempTuple[vp] = mutNuc;
-
-                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
-
-                  mutNuc = nextNuc[mutNuc];
-                  tempTuple[vp] = mutNuc;
-
-                  if (lstspct_FindTuple_With_Copy(tempTuple, d_param->numTuples) != -1)
-                    votes_2d(vp + p,unmasked_nuc_index[mutNuc])++;
-
-                  mutNuc = nextNuc[mutNuc];
-                  tempTuple[vp] = mutNuc;
+                 }
                 }
               }
             }
@@ -584,17 +571,10 @@ if(w_tid == 0)
           if (allGood != len-d_param->tupleSize+1)
           {
             for (unsigned p = 0; p < len; p+=1){
-              if (votes_2d(p,0) > d_param->minVotes)
+             for(unsigned m=0; m<4; m++) {
+              if (votes_2d(p,m) > d_param->minVotes)
                 numAboveThreshold=1;
-
-              if (votes_2d(p,1) > d_param->minVotes)
-                numAboveThreshold=1;
-
-              if (votes_2d(p,2) > d_param->minVotes)
-                numAboveThreshold=1;
-
-              if (votes_2d(p,3) > d_param->minVotes)
-                  numAboveThreshold=1;
+             }
             }
           }
 
