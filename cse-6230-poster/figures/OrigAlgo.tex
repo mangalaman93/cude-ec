@@ -1,0 +1,43 @@
+\begin{algorithm}[H]
+	\color{Crimson} %REMOVE_BEGIN
+	Allocate vote[] \tcp*{In local memory}
+    \color{Black} %REMOVE_END
+ 	\While{read chunk $\ne$ Empty}
+    {
+       	\color{Crimson} %REMOVE_BEGIN
+        \tcc{Access to read for this thread $tid$}
+		$current\_read \gets global\_mem\_all\_reads[tid]$\;
+        \color{Black} %REMOVE_END
+        \While{$current\_read\_correction\_ongoing$}
+        {
+            \For{Every $tmpTuple$ k-mer in $current\_read$} 
+            {
+                \If{$tmpTuple$ is not solid i.e. rare} 
+                {
+                \color{Crimson} %REMOVE_BEGIN
+                    \For{Each character position $i$ in $tmpTuple$} 
+                    {
+						\color{Black} %REMOVE_END
+                        \For{$newtmpTuple \gets$  mutate $i$ with other nucleotides $m:(0\dots3)$}{
+                            \If{$newtmpTuple$ is solid}
+                            {
+                                Update $vote[i][m] += 1$
+                            }
+                        }
+                    }
+                }
+            }
+            \color{Crimson} %REMOVE_BEGIN
+            \If{all $tmpTuple$ were solid}
+            {
+            	\color{Black} %REMOVE_END
+            	$current\_read\_correction\_ongoing \gets $FALSE
+            }
+            \color{Crimson} %REMOVE_BEGIN
+            \tcc{Sequential iteration over $vote[][]$ to find maximum $maxVote=vote[p][q]$}
+            \color{Black} %REMOVE_END
+            \tcc{Update $current\_read[p]$ = Nucleotide[q]}
+        }
+ 	}
+\caption{Original CUDA-EC algorithm}
+\end{algorithm}

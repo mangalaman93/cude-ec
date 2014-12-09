@@ -1,0 +1,45 @@
+\begin{algorithm}[H]
+	\color{DarkGreen} %NEW_BEGIN
+	Allocate vote[] 	\tcp*{In shared memory}
+    \color{Black} %NEW_END
+ 	\While{read chunk $\ne$ Empty}
+    {
+        \color{DarkGreen} %NEW_BEGIN
+        \tcc{Access to read for this warp $tid$}
+        \tcc{Threads in warp load read to shared mem from global}
+		$current\_read \gets shared\_mem\_all\_reads[warp\_id]$\;
+        \color{Black} %NEW_END
+        \While{$current\_read\_correction\_ongoing$}
+        {
+            \For{Every $tmpTuple$ k-mer in $current\_read$} 
+            {
+                \If{$tmpTuple$ is not solid i.e. rare} 
+                {
+                	\color{DarkGreen} %NEW_BEGIN
+                    \For{Each character position $i=0$ in $tmpTuple$; i+=WARPSIZE} 
+                    {
+                    	\color{Black} %NEW_END
+                        \For{$newtmpTuple \gets$  mutate $i$ with other nucleotides $m:(0\dots3)$}{
+                            \If{$newtmpTuple$ is solid}
+                            {
+                                Update $vote[i][m] += 1$\;
+                                tmpTupleUnChanged = false\;
+                            }
+                        }
+                    }
+                }
+            }
+            \color{DarkGreen} %NEW_BEGIN
+            \If{\_\_all(tmpTupleUnChanged)}
+            {
+            	\color{Black} %NEW_END
+            	$current\_read\_correction\_ongoing \gets $FALSE
+            }
+            \color{DarkGreen} %NEW_BEGIN
+            \tcc{REDUCTION within warp for $vote[][]$ to find maximum $maxVote=vote[p][q]$}
+            \color{Black} %NEW_END
+            \tcc{Update $current\_read[p]$ = Nucleotide[q]}
+        }
+ 	}
+\caption{New CUDA-EC execution flow}
+\end{algorithm}
